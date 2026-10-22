@@ -1,6 +1,6 @@
 {
     "buildCommand": "npm run build",
-    "outputDirectory": "dist/Dental Clinic",
+    "outputDirectory": "dist/akh-dental-clinic",
     "rewrites": [
       {
         "source": "/(.*)",
