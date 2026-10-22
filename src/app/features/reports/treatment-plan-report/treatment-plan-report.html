@@ -1,0 +1,181 @@
+<div class="space-y-6">
+
+    <div class="flex items-center justify-between print:hidden">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">بطاقة تشخيص وخطة علاج</h1>
+        <p class="text-slate-500 text-sm mt-1">اختر المريض والحالة العلاجية</p>
+      </div>
+      <button pButton type="button" label="رجوع" icon="pi pi-arrow-right" severity="secondary" [outlined]="true" (click)="goBack()"></button>
+    </div>
+  
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 print:hidden">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">المريض</label>
+          <p-select
+            [(ngModel)]="selectedPatientId"
+            [options]="patients()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="اختر المريض"
+            [filter]="true"
+            [loading]="loadingPatients()"
+            appendTo="body"
+            styleClass="w-full"
+            (onChange)="onPatientChange()" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">الحالة العلاجية</label>
+          <p-select
+            [(ngModel)]="selectedCaseId"
+            [options]="cases()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="اختر الحالة"
+            [filter]="true"
+            [disabled]="!selectedPatientId()"
+            appendTo="body"
+            styleClass="w-full" />
+        </div>
+        <div class="flex items-end">
+          <button
+            pButton
+            type="button"
+            label="عرض التقرير"
+            icon="pi pi-search"
+            [loading]="loadingReport()"
+            [disabled]="!selectedCaseId()"
+            (click)="loadReport()">
+          </button>
+        </div>
+      </div>
+    </div>
+  
+    @if (loadingReport()) {
+      <div class="bg-white rounded-2xl p-8">
+        <p-skeleton height="30rem" />
+      </div>
+    }
+  
+    @else if (report(); as r) {
+  
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-0 print:rounded-none pdf-container">
+  
+        <div class="bg-primary-700 text-white p-6 print:p-4">
+          <div class="flex items-center gap-4">
+            <div class="w-20 h-20 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 shadow-sm p-1">
+              <img src="assets/512X512.png" alt="Logo" class="w-full h-full object-contain" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-2 mb-1">
+                <span class="text-sm opacity-90">د.</span>
+                <h1 class="text-2xl font-bold">{{ r.doctorFullName || '—' }}</h1>
+              </div>
+              <p class="text-primary-100 font-semibold text-base mb-1">بطاقة تشخيص وخطة علاج أسنان</p>
+              <div class="text-sm opacity-90 flex items-center gap-3 flex-wrap">
+                @if (r.clinicName) { <span>{{ r.clinicName }}</span> }
+                @if (r.clinicAddress) { <span>· {{ r.clinicAddress }}</span> }
+                @if (r.clinicPhone) { <span>· {{ r.clinicPhone }}</span> }
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <div class="p-6 space-y-4">
+  
+          <div>
+            <div class="bg-primary-50 border border-primary-200 px-4 py-2 font-bold text-primary-800 text-sm rounded-t-lg">بيانات المريض</div>
+            <div class="grid grid-cols-2 gap-x-8 gap-y-2 p-4 border border-t-0 border-primary-200 rounded-b-lg text-sm">
+              <div><span class="text-slate-500 me-3">اسم المريض:</span> <span class="font-semibold text-slate-800">{{ r.patientFullName }}</span></div>
+              <div><span class="text-slate-500 me-3">رقم الملف:</span> <span class="font-semibold text-slate-800 font-mono">#{{ r.fileNumber }}</span></div>
+              <div><span class="text-slate-500 me-3">التاريخ:</span> <span class="font-semibold text-slate-800">{{ r.startDate | date:'dd/MM/yyyy' }}</span></div>
+              <div><span class="text-slate-500 me-3">العمر / الجنس:</span> <span class="font-semibold text-slate-800">{{ r.patientAge || '—' }} سنة / {{ r.patientGender }}</span></div>
+              <div><span class="text-slate-500 me-3">رقم الهاتف:</span> <span class="font-semibold text-slate-800">{{ r.patientPhone || '—' }}</span></div>
+            </div>
+          </div>
+  
+          <div>
+            <div class="bg-primary-50 border border-primary-200 px-4 py-2 font-bold text-primary-800 text-sm rounded-t-lg">القصة المرضية والمعلومات المهمة</div>
+            <div class="grid grid-cols-2 gap-x-8 gap-y-2 p-4 border border-t-0 border-primary-200 rounded-b-lg text-sm">
+              <div><span class="text-slate-500 me-3">أمراض مزمنة / سوابق:</span> <span class="font-semibold text-slate-800">{{ r.chronicDiseases || r.medicalHistory || '—' }}</span></div>
+              <div><span class="text-slate-500 me-3">أدوية مستخدمة:</span> <span class="font-semibold text-slate-800">—</span></div>
+              <div><span class="text-slate-500 me-3">حساسية دوائية / مواد:</span> <span class="font-semibold text-slate-800">{{ r.drugAllergies || '—' }}</span></div>
+              <div><span class="text-slate-500 me-3">حمل / إرضاع:</span> <span class="font-semibold text-slate-800">—</span></div>
+            </div>
+          </div>
+  
+          <div>
+            <div class="bg-primary-50 border border-primary-200 px-4 py-2 font-bold text-primary-800 text-sm rounded-t-lg">الشكوى الرئيسية والفحص السريري</div>
+            <div class="p-4 border border-t-0 border-primary-200 rounded-b-lg text-sm space-y-3">
+              <div>
+                <span class="text-slate-500 block mb-1">الشكوى الرئيسية:</span>
+                <div class="font-semibold text-slate-800 whitespace-pre-line  leading-loose">{{ r.chiefComplaint || '—' }}</div>
+              </div>
+              <div class="pt-2 border-t border-slate-200">
+                <span class="text-slate-500 block mb-1">نتائج الفحص / الأسنان المعنية / الأشعة:</span>
+                <div class="font-semibold text-slate-800 whitespace-pre-line leading-loose">{{ r.clinicalFindings || '—' }}</div>
+                @if (r.teethNumbers && r.teethNumbers.length > 0) {
+                  <div class="mt-2 flex flex-wrap items-center gap-1">
+                    <span class="text-xs text-slate-500">الأسنان:</span>
+                    @for (n of r.teethNumbers; track n) {
+                      <span class="text-xs px-1.5 py-0.5 rounded bg-primary-100 text-primary-800 font-mono font-semibold">{{ n }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+  
+          <div>
+            <div class="bg-primary-50 border border-primary-200 px-4 py-2 font-bold text-primary-800 text-sm rounded-t-lg">التشخيص</div>
+            <div class="p-4 border border-t-0 border-primary-200 rounded-b-lg text-sm">
+              @if (r.diagnoses.length === 0) {
+                <div class="text-slate-400">—</div>
+              } @else {
+                <ul class="list-disc pr-5 space-y-1 text-slate-800">
+                  @for (d of r.diagnoses; track d.nameAr) {
+                    <li>
+                      <span class="font-semibold">{{ d.nameAr }}</span>
+                      @if (d.notes) { <span class="text-slate-500"> — {{ d.notes }}</span> }
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          </div>
+  
+          <div>
+            <div class="bg-primary-50 border border-primary-200 px-4 py-2 font-bold text-primary-800 text-sm rounded-t-lg">خطة العلاج</div>
+            <div class="p-4 border border-t-0 border-primary-200 rounded-b-lg text-sm min-h-[5rem]">
+              <div class="text-slate-800 whitespace-pre-line">{{ r.treatmentPlanSummary || '—' }}</div>
+            </div>
+          </div>
+  
+          <div>
+            <div class="bg-primary-50 border border-primary-200 px-4 py-2 font-bold text-primary-800 text-sm rounded-t-lg">الموافقة والتوقيع</div>
+            <div class="p-4 border border-t-0 border-primary-200 rounded-b-lg text-sm">
+              <p class="mb-6 text-slate-600">أقر بأنني اطلعت على التشخيص وخطة العلاج والتكلفة التقديرية ووافقت على العلاج بعد مناقشة الخيارات.</p>
+              <div class="grid grid-cols-2 gap-8 mt-8">
+                <div class="text-center">
+                  <div class="border-t border-slate-400 pt-2 font-semibold text-slate-700">توقيع الطبيب: {{ r.doctorFullName }}</div>
+                </div>
+                <div class="text-center">
+                  <div class="border-t border-slate-400 pt-2 font-semibold text-slate-700">توقيع المريض / ولي الأمر</div>
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <div>
+            <div class="bg-primary-50 border border-primary-200 px-4 py-2 font-bold text-primary-800 text-sm rounded-t-lg">مستجدات المتابعة</div>
+            <div class="p-4 border border-t-0 border-primary-200 rounded-b-lg min-h-[4rem]"></div>
+          </div>
+  
+        </div>
+      </div>
+  
+      <div class="flex justify-end gap-2 print:hidden">
+        <button pButton type="button" label="تصدير PDF" icon="pi pi-file-pdf" (click)="exportPdf()"></button>
+      </div>
+    }
+  </div>

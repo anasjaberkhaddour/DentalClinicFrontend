@@ -1,0 +1,91 @@
+:host {
+    display: block;
+  }
+  
+  ::ng-deep .fc {
+    font-family: 'Cairo', 'Segoe UI', sans-serif;
+  }
+  
+  ::ng-deep .fc-toolbar-title {
+    font-size: 1.25rem !important;
+    font-weight: 700;
+    color: #1e293b;
+  }
+  
+  ::ng-deep .fc-button {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    text-transform: capitalize;
+    font-weight: 600;
+  }
+  
+  ::ng-deep .fc-button:hover {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+  }
+  
+  ::ng-deep .fc-button-active {
+    background-color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+  }
+  
+  ::ng-deep .fc-daygrid-day-number {
+    color: #475569;
+    font-weight: 600;
+  }
+  
+  ::ng-deep .fc-event {
+    border-radius: 6px !important;
+    padding: 2px 4px !important;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  
+  ::ng-deep .fc-event:hover {
+    opacity: 0.9;
+  }
+  
+  ::ng-deep .fc-col-header-cell-cushion {
+    color: #64748b;
+    font-weight: 700;
+    padding: 8px 0;
+  }
+
+  ::ng-deep .fc-day-with-add {
+    position: relative;
+  
+    .day-add-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.15s ease;
+      font-size: 10px;
+      z-index: 5;
+  
+      i {
+        font-size: 10px;
+      }
+    }
+  
+    &:hover .day-add-btn {
+      opacity: 1;
+    }
+  
+    .day-add-btn:hover {
+      background: #3b82f6;
+      color: white;
+      transform: scale(1.1);
+    }
+  }

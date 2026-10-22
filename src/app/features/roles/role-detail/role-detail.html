@@ -1,0 +1,108 @@
+<div class="max-w-4xl mx-auto space-y-6">
+
+    @if (loading()) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-3">
+        <p-skeleton width="40%" height="2rem" />
+        <p-skeleton width="60%" height="1rem" />
+      </div>
+    }
+  
+    @else if (role(); as r) {
+  
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-primary-50 flex items-center justify-center">
+              <i class="pi pi-shield text-primary-600 text-xl"></i>
+            </div>
+            <div>
+              <h1 class="text-xl font-bold text-slate-800">{{ r.name }}</h1>
+              @if (r.description) {
+                <p class="text-sm text-slate-500 mt-0.5">{{ r.description }}</p>
+              }
+            </div>
+          </div>
+  
+          <div class="flex items-center gap-2">
+            <button pButton type="button" label="رجوع" icon="pi pi-arrow-right" severity="secondary" [outlined]="true" (click)="goBack()"></button>
+            <button pButton type="button" label="تعديل" icon="pi pi-pencil" (click)="openEdit()"></button>
+            <button pButton type="button" icon="pi pi-trash" severity="danger" [outlined]="true" (click)="confirmDelete()"></button>
+          </div>
+        </div>
+  
+        <div class="mt-6 pt-6 border-t border-slate-100 grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div>
+            <div class="text-xs text-slate-500 mb-1">المستخدمون</div>
+            <div class="font-semibold text-slate-800 text-sm">{{ r.userCount ?? 0 }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 mb-1">الصلاحيات</div>
+            <div class="font-semibold text-slate-800 text-sm">{{ r.permissionCodes?.length ?? 0 }}</div>
+          </div>
+        </div>
+      </div>
+  
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+          <h3 class="font-bold text-slate-700 flex items-center gap-2">
+            <i class="pi pi-key text-primary-600"></i>
+            الصلاحيات
+          </h3>
+          <button pButton type="button" label="إدارة الصلاحيات" icon="pi pi-pencil" size="small" [outlined]="true" (click)="openPermissionsDialog()"></button>
+        </div>
+  
+        @if (!r.permissionCodes || r.permissionCodes.length === 0) {
+          <div class="p-8 text-center bg-slate-50 rounded-xl">
+            <i class="pi pi-key text-slate-300 text-2xl mb-2 block"></i>
+            <p class="text-sm text-slate-400">لا توجد صلاحيات مرتبطة بهذا الدور</p>
+          </div>
+        } @else {
+          <div class="flex flex-wrap gap-2">
+            @for (p of r.permissionCodes; track p) {
+              <span class="text-xs px-3 py-1.5 rounded-lg bg-primary-50 text-primary-700 border border-primary-200 font-mono">
+                {{ p }}
+              </span>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+  
+  <!-- Edit dialog -->
+  <p-dialog [visible]="editDialog()" (visibleChange)="editDialog.set($event)" header="تعديل الدور" [modal]="true" [style]="{ width: '500px' }" appendTo="body">
+    <div class="space-y-4 py-2">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">اسم الدور</label>
+        <input pInputText [(ngModel)]="editForm.name" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">الوصف</label>
+        <textarea pTextarea [(ngModel)]="editForm.description" rows="2" class="w-full"></textarea>
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="editDialog.set(false)"></button>
+      <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="editSaving()" (click)="saveEdit()"></button>
+    </ng-template>
+  </p-dialog>
+  
+  <!-- Permissions dialog -->
+  <p-dialog [visible]="permissionsDialog()" (visibleChange)="permissionsDialog.set($event)" header="إدارة الصلاحيات" [modal]="true" [style]="{ width: '600px' }" appendTo="body">
+    <div class="space-y-4 py-2">
+      <p-multiselect
+        [(ngModel)]="selectedPermissions"
+        [options]="permissionOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="اختر الصلاحيات"
+        [filter]="true"
+        display="chip"
+        styleClass="w-full"
+        appendTo="body" />
+    </div>
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="permissionsDialog.set(false)"></button>
+      <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="permissionsSaving()" (click)="savePermissions()"></button>
+    </ng-template>
+  </p-dialog>

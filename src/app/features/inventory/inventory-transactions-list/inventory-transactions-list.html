@@ -1,0 +1,290 @@
+<div class="space-y-6">
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">حركات المخزون</h1>
+        <p class="text-slate-500 text-sm mt-1">سجل الشراء والاستهلاك والتسويات</p>
+      </div>
+      <button pButton type="button" label="حركة جديدة" icon="pi pi-plus" (click)="openCreate()"></button>
+    </div>
+  
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="md:col-span-2">
+          <input
+            pInputText
+            [(ngModel)]="filter.search"
+            (keyup.enter)="onSearch()"
+            placeholder="ابحث بالصنف أو المرجع..."
+            class="w-full !py-2.5 !px-4 !rounded-xl" />
+        </div>
+        <p-select
+          [(ngModel)]="filter.type"
+          [options]="typeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="النوع"
+          [showClear]="true"
+          appendTo="body"
+          styleClass="w-full"
+          (onChange)="onSearch()" />
+        <p-select
+          [(ngModel)]="filter.inventoryItemId"
+          [options]="inventoryItems()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="الصنف"
+          [showClear]="true"
+          [filter]="true"
+          appendTo="body"
+          styleClass="w-full"
+          (onChange)="onSearch()" />
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3">
+        <p-datepicker
+          [(ngModel)]="filter.fromDate"
+          placeholder="من تاريخ"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          appendTo="body"
+          styleClass="w-full"
+          (onSelect)="onSearch()" />
+        <p-datepicker
+          [(ngModel)]="filter.toDate"
+          placeholder="إلى تاريخ"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          appendTo="body"
+          styleClass="w-full"
+          (onSelect)="onSearch()" />
+        <p-select
+          [(ngModel)]="filter.supplierId"
+          [options]="suppliers()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="المورد"
+          [showClear]="true"
+          [filter]="true"
+          appendTo="body"
+          styleClass="w-full"
+          (onChange)="onSearch()" />
+          <p-select
+            [(ngModel)]="filter.expiryFilter"
+            [options]="expiryFilterOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="الصلاحية"
+            [showClear]="true"
+            appendTo="body"
+            styleClass="w-full"
+            (onChange)="onSearch()" />
+            <button
+                pButton
+                type="button"
+                label="متبقٍ فقط"
+                icon="pi pi-filter"
+                [severity]="filter.onlyWithRemaining ? 'primary' : 'secondary'"
+                [outlined]="!filter.onlyWithRemaining"
+                (click)="toggleOnlyRemaining()">
+            </button>
+        <button pButton type="button" label="مسح" icon="pi pi-filter-slash" severity="secondary" [outlined]="true" (click)="filter = { page: 1, pageSize: 20 }; onSearch()"></button>
+      </div>
+    </div>
+  
+    @if (loading()) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-3">
+        <p-skeleton height="3rem" />
+        <p-skeleton height="3rem" />
+        <p-skeleton height="3rem" />
+      </div>
+    }
+  
+    @else if (items().length === 0) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-16 text-center">
+        <i class="pi pi-history text-slate-300 text-4xl mb-3 block"></i>
+        <h3 class="text-lg font-semibold text-slate-600 mb-1">لا توجد حركات</h3>
+        <p class="text-sm text-slate-400 mb-6">ابدأ بإضافة أول حركة</p>
+        <button pButton type="button" label="حركة جديدة" icon="pi pi-plus" (click)="openCreate()"></button>
+      </div>
+    }
+  
+    @else {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr class="text-right text-sm font-semibold text-slate-600">
+              <th class="px-4 py-3">التاريخ</th>
+              <th class="px-4 py-3">الصنف</th>
+              <th class="px-4 py-3">النوع</th>
+              <th class="px-4 py-3">الكمية</th>
+              <th class="px-4 py-3">المتبقي/الصلاحية</th>
+              <th class="px-4 py-3">المورد</th>
+              <th class="px-4 py-3">المرجع</th>
+              <th class="px-4 py-3 w-20"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of items(); track t.id) {
+              <tr class="border-b border-slate-100 hover:bg-slate-50">
+                <td class="px-4 py-3 text-slate-600 text-sm whitespace-nowrap">
+                  {{ t.transactionDate | date:'dd/MM/yyyy' }}
+                  <div class="text-xs text-slate-400">{{ t.transactionDate | date:'HH:mm' }}</div>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="font-semibold text-slate-800">{{ t.inventoryItemNameAr }}</div>
+                  <div class="text-xs text-slate-400 font-mono">{{ t.inventoryItemCode }}</div>
+                </td>
+                <td class="px-4 py-3">
+                  <span
+                    class="text-xs px-2 py-0.5 rounded-full font-semibold"
+                    [class.bg-emerald-50]="getTypeSeverity(t.type) === 'success'"
+                    [class.text-emerald-600]="getTypeSeverity(t.type) === 'success'"
+                    [class.bg-blue-50]="getTypeSeverity(t.type) === 'info'"
+                    [class.text-blue-600]="getTypeSeverity(t.type) === 'info'"
+                    [class.bg-amber-50]="getTypeSeverity(t.type) === 'warn'"
+                    [class.text-amber-600]="getTypeSeverity(t.type) === 'warn'"
+                    [class.bg-red-50]="getTypeSeverity(t.type) === 'danger'"
+                    [class.text-red-600]="getTypeSeverity(t.type) === 'danger'"
+                    [class.bg-slate-100]="getTypeSeverity(t.type) === 'secondary'"
+                    [class.text-slate-600]="getTypeSeverity(t.type) === 'secondary'">
+                    {{ getTypeLabel(t.type) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="font-bold text-slate-800">{{ t.quantity | number:'1.0-2' }}</span>
+                  <div class="text-xs text-slate-400">{{ t.quantityBefore | number:'1.0-0' }} ← {{ t.quantityAfter | number:'1.0-0' }}</div>
+                </td>
+                <td class="px-4 py-3 text-sm">
+                  @if (t.batchRemaining != null) {
+                    <span class="font-semibold text-emerald-600">متبقي {{ t.batchRemaining | number:'1.0-2' }}</span>
+                    @if (t.expiryDate) {
+                      <div class="text-xs text-slate-500">{{ t.expiryDate | date:'dd/MM/yyyy' }}</div>
+                    }
+                  } @else if (t.sourceTransactionId) {
+                    <span class="text-xs text-slate-400">من دفعة</span>
+                  } @else {
+                    <span class="text-slate-300">—</span>
+                  }
+                </td>
+                <td class="px-4 py-3 text-slate-600 text-sm">{{ t.supplierNameAr || '—' }}</td>
+                <td class="px-4 py-3 text-slate-600 text-sm font-mono truncate max-w-xs">{{ t.reference || '—' }}</td>
+                <td class="px-4 py-3">
+                  <button pButton type="button" icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" size="small" (click)="confirmDelete(t)"></button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+  
+      @if (totalRecords() > 0) {
+        <p-paginator
+          [rows]="filter.pageSize!"
+          [totalRecords]="totalRecords()"
+          [rowsPerPageOptions]="[20, 40, 80]"
+          (onPageChange)="onPageChange($event)"
+          styleClass="!bg-transparent !border-none" />
+      }
+    }
+  </div>
+  
+  <!-- Create dialog -->
+  <p-dialog [visible]="createDialog()" (visibleChange)="createDialog.set($event)" header="حركة جديدة" [modal]="true" [style]="{ width: '650px' }" appendTo="body">
+    <div class="space-y-4 py-2">
+  
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">النوع *</label>
+          <p-select
+            [(ngModel)]="form.type"
+            [options]="typeOptions"
+            optionLabel="label"
+            optionValue="value"
+            appendTo="body"
+            styleClass="w-full"
+            (onChange)="onTypeChange()" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">التاريخ *</label>
+          <p-datepicker [(ngModel)]="form.transactionDate" dateFormat="dd/mm/yy" [showTime]="true" [showIcon]="true" appendTo="body" styleClass="w-full" />
+        </div>
+      </div>
+  
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">الصنف *</label>
+        <p-select
+          [(ngModel)]="form.inventoryItemId"
+          [options]="inventoryItems()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="اختر الصنف"
+          [filter]="true"
+          appendTo="body"
+          styleClass="w-full"
+          (onChange)="onItemChange()" />
+      </div>
+  
+      @if (isOutgoing() && batches().length > 0) {
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">الدفعة (اختياري)</label>
+          <p-select
+            [(ngModel)]="form.sourceTransactionId"
+            [options]="batches()"
+            optionLabel="label"
+            optionValue="id"
+            placeholder="تلقائي — الأقرب انتهاءً أولاً"
+            [showClear]="true"
+            [filter]="true"
+            appendTo="body"
+            styleClass="w-full" />
+          <div class="text-xs text-slate-500 mt-1">
+            إن تركتها فارغة، سيخصم النظام تلقائياً من الدفعة الأقرب انتهاءً (FEFO).
+          </div>
+        </div>
+      }
+  
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">
+            @if (isAdjustment()) { الرصيد الجديد * } @else { الكمية * }
+          </label>
+          <p-inputnumber [(ngModel)]="form.quantity" [min]="0" [minFractionDigits]="2" styleClass="w-full" />
+        </div>
+        @if (isIncoming()) {
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">تاريخ الصلاحية</label>
+            <p-datepicker [(ngModel)]="form.expiryDate" dateFormat="dd/mm/yy" [showIcon]="true" appendTo="body" styleClass="w-full" />
+          </div>
+        }
+      </div>
+  
+      @if (isIncoming()) {
+        <div class="grid grid-cols-3 gap-4">
+          <div><label class="block text-sm font-semibold text-slate-700 mb-2">تكلفة الوحدة</label><p-inputnumber [(ngModel)]="form.unitCost" [min]="0" [minFractionDigits]="2" styleClass="w-full" /></div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">العملة</label>
+            <p-select [(ngModel)]="form.currencyId" [options]="currencies()" optionLabel="label" optionValue="value" placeholder="اختر" [showClear]="true" appendTo="body" styleClass="w-full" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">المورد</label>
+            <p-select [(ngModel)]="form.supplierId" [options]="suppliers()" optionLabel="label" optionValue="value" placeholder="اختر" [showClear]="true" [filter]="true" appendTo="body" styleClass="w-full" />
+          </div>
+        </div>
+      }
+  
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">المرجع</label>
+        <input pInputText [(ngModel)]="form.reference" class="w-full" placeholder="رقم إيصال، فاتورة..." />
+      </div>
+  
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات</label>
+        <textarea pTextarea [(ngModel)]="form.notes" rows="2" class="w-full"></textarea>
+      </div>
+  
+    </div>
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="createDialog.set(false)"></button>
+      <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="saving()" (click)="saveCreate()"></button>
+    </ng-template>
+  </p-dialog>

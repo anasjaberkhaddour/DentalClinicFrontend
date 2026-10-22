@@ -1,0 +1,120 @@
+<div class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">الفواتير</h1>
+        <p class="text-slate-500 text-sm mt-1">إدارة فواتير المرضى</p>
+      </div>
+    </div>
+  
+    <!-- Filters -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="md:col-span-2">
+          <div class="relative">
+            <i class="pi pi-search absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+            <input
+              pInputText
+              [(ngModel)]="filter.search"
+              (keyup.enter)="onSearch()"
+              placeholder="ابحث برقم الفاتورة أو اسم المريض..."
+              class="w-full !pr-10" />
+          </div>
+        </div>
+        <p-select
+          [(ngModel)]="filter.clinicId"
+          [options]="clinics()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="كل العيادات"
+          styleClass="w-full"
+          (onChange)="onSearch()" />
+        <p-select
+          [(ngModel)]="filter.status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="كل الحالات"
+          styleClass="w-full"
+          (onChange)="onSearch()" />
+      </div>
+    </div>
+  
+    <!-- Loading -->
+    @if (loading()) {
+      <div class="space-y-3">
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="p-4 rounded-xl border border-slate-200 space-y-2">
+            <p-skeleton width="30%" height="1rem" />
+            <p-skeleton width="60%" height="0.75rem" />
+          </div>
+        }
+      </div>
+    }
+  
+    <!-- Empty -->
+    @else if (invoices().length === 0) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-16 text-center">
+        <i class="pi pi-receipt text-slate-300 text-4xl mb-3 block"></i>
+        <h3 class="text-lg font-semibold text-slate-600 mb-1">لا توجد فواتير</h3>
+        <p class="text-sm text-slate-400">لم يتم إصدار أي فاتورة بعد</p>
+      </div>
+    }
+  
+    <!-- Table -->
+    @else {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr class="text-right text-sm font-semibold text-slate-600">
+              <th class="px-4 py-3">رقم الفاتورة</th>
+              <th class="px-4 py-3">المريض</th>
+              <th class="px-4 py-3">العيادة</th>
+              <th class="px-4 py-3">التاريخ</th>
+              <th class="px-4 py-3">الإجمالي</th>
+              <th class="px-4 py-3">المدفوع</th>
+              <th class="px-4 py-3">المتبقي</th>
+              <th class="px-4 py-3">الحالة</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (inv of invoices(); track inv.id) {
+              <tr
+                class="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
+                (click)="openInvoice(inv)">
+                <td class="px-4 py-3 font-mono text-sm text-slate-700">{{ inv.invoiceNumber }}</td>
+                <td class="px-4 py-3 text-slate-700 font-medium">{{ inv.patientName }}</td>
+                <td class="px-4 py-3 text-slate-600 text-sm">{{ inv.clinicName }}</td>
+                <td class="px-4 py-3 text-slate-600 text-sm">{{ inv.invoiceDate | date:'dd/MM/yyyy' }}</td>
+                <td class="px-4 py-3 font-semibold text-slate-700">{{ inv.totalAmount | number:'1.0-0' }}</td>
+                <td class="px-4 py-3 text-emerald-600 font-medium">{{ inv.paidAmount | number:'1.0-0' }}</td>
+                <td class="px-4 py-3 font-semibold" [class.text-red-600]="inv.remainingAmount > 0" [class.text-slate-400]="inv.remainingAmount === 0">
+                  {{ inv.remainingAmount | number:'1.0-0' }}
+                </td>
+                <td class="px-4 py-3">
+                  <span class="text-xs px-2 py-0.5 rounded-full font-semibold" [class]="getStatusColor(inv.status)">
+                    {{ getStatusName(inv.status) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <i class="pi pi-arrow-left text-slate-400"></i>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  
+    <!-- Paginator -->
+    @if (totalRecords() > 0) {
+      <p-paginator
+        [rows]="filter.pageSize"
+        [totalRecords]="totalRecords()"
+        [rowsPerPageOptions]="[20, 40, 80]"
+        (onPageChange)="onPageChange($event)"
+        styleClass="!bg-transparent !border-none" />
+    }
+  </div>

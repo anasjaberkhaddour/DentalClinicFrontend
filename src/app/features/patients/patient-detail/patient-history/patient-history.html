@@ -1,0 +1,265 @@
+<div class="space-y-6">
+
+    <!-- Critical alerts banner -->
+    @if (history?.criticalAlerts && !editing()) {
+      <div class="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3">
+        <i class="pi pi-exclamation-triangle text-red-600 text-xl mt-0.5"></i>
+        <div class="flex-1">
+          <h4 class="font-bold text-red-700 mb-1">تنبيه طبي حرج</h4>
+          <p class="text-sm text-red-600 whitespace-pre-line">{{ history!.criticalAlerts }}</p>
+        </div>
+      </div>
+    }
+  
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <h3 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+        <i class="pi pi-heart text-primary-600"></i>
+        القصة المرضية
+      </h3>
+  
+      @if (!editing()) {
+        <button
+          pButton
+          type="button"
+          label="تعديل"
+          icon="pi pi-pencil"
+          class="p-button-outlined"
+          (click)="startEdit()">
+        </button>
+      }
+    </div>
+  
+    <!-- View mode -->
+    @if (!editing()) {
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+  
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <h4 class="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+            <i class="pi pi-heart-fill text-red-500 text-sm"></i>
+            الأمراض المزمنة
+          </h4>
+          <p class="text-sm text-slate-600 whitespace-pre-line">
+            {{ hasValue(history?.chronicDiseases) ? history!.chronicDiseases : '—' }}
+          </p>
+        </div>
+  
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <h4 class="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+            <i class="pi pi-history text-blue-500 text-sm"></i>
+            السوابق المرضية
+          </h4>
+          <p class="text-sm text-slate-600 whitespace-pre-line">
+            {{ hasValue(history?.pastMedicalHistory) ? history!.pastMedicalHistory : '—' }}
+          </p>
+        </div>
+  
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <h4 class="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+            <i class="pi pi-briefcase text-purple-500 text-sm"></i>
+            السوابق الجراحية
+          </h4>
+          <p class="text-sm text-slate-600 whitespace-pre-line">
+            {{ hasValue(history?.pastSurgicalHistory) ? history!.pastSurgicalHistory : '—' }}
+          </p>
+        </div>
+  
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <h4 class="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+            <i class="pi pi-box text-emerald-500 text-sm"></i>
+            الأدوية الحالية
+          </h4>
+          <p class="text-sm text-slate-600 whitespace-pre-line">
+            {{ hasValue(history?.currentMedications) ? history!.currentMedications : '—' }}
+          </p>
+        </div>
+  
+        <div class="p-4 rounded-xl bg-amber-50 border border-amber-100">
+          <h4 class="font-semibold text-amber-700 mb-2 flex items-center gap-2">
+            <i class="pi pi-exclamation-circle text-amber-500 text-sm"></i>
+            الحساسية الدوائية
+          </h4>
+          <p class="text-sm text-amber-700 whitespace-pre-line">
+            {{ hasValue(history?.drugAllergies) ? history!.drugAllergies : 'لا توجد' }}
+          </p>
+        </div>
+  
+        <div class="p-4 rounded-xl bg-amber-50 border border-amber-100">
+          <h4 class="font-semibold text-amber-700 mb-2 flex items-center gap-2">
+            <i class="pi pi-exclamation-circle text-amber-500 text-sm"></i>
+            حساسية المواد
+          </h4>
+          <p class="text-sm text-amber-700 whitespace-pre-line">
+            {{ hasValue(history?.materialAllergies) ? history!.materialAllergies : 'لا توجد' }}
+          </p>
+        </div>
+  
+        <div class="p-4 rounded-xl bg-amber-50 border border-amber-100">
+          <h4 class="font-semibold text-amber-700 mb-2 flex items-center gap-2">
+            <i class="pi pi-exclamation-circle text-amber-500 text-sm"></i>
+            حساسية الطعام
+          </h4>
+          <p class="text-sm text-amber-700 whitespace-pre-line">
+            {{ hasValue(history?.foodAllergies) ? history!.foodAllergies : 'لا توجد' }}
+          </p>
+        </div>
+  
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <h4 class="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+            <i class="pi pi-user text-pink-500 text-sm"></i>
+            الحمل والإرضاع
+          </h4>
+          <div class="flex items-center gap-3 text-sm">
+            <span class="px-2 py-0.5 rounded-full"
+              [class.bg-pink-100]="history?.isPregnant"
+              [class.text-pink-700]="history?.isPregnant"
+              [class.bg-slate-200]="!history?.isPregnant"
+              [class.text-slate-500]="!history?.isPregnant">
+              {{ history?.isPregnant ? 'حامل' : 'غير حامل' }}
+            </span>
+            <span class="px-2 py-0.5 rounded-full"
+              [class.bg-pink-100]="history?.isBreastfeeding"
+              [class.text-pink-700]="history?.isBreastfeeding"
+              [class.bg-slate-200]="!history?.isBreastfeeding"
+              [class.text-slate-500]="!history?.isBreastfeeding">
+              {{ history?.isBreastfeeding ? 'مرضع' : 'غير مرضع' }}
+            </span>
+          </div>
+        </div>
+  
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <h4 class="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+            <i class="pi pi-info-circle text-indigo-500 text-sm"></i>
+            العادات
+          </h4>
+          <div class="flex items-center gap-3 text-sm">
+            <span class="px-2 py-0.5 rounded-full"
+              [class.bg-orange-100]="history?.smokes"
+              [class.text-orange-700]="history?.smokes"
+              [class.bg-slate-200]="!history?.smokes"
+              [class.text-slate-500]="!history?.smokes">
+              {{ history?.smokes ? 'مدخّن' : 'غير مدخّن' }}
+            </span>
+            <span class="px-2 py-0.5 rounded-full"
+              [class.bg-orange-100]="history?.consumesAlcohol"
+              [class.text-orange-700]="history?.consumesAlcohol"
+              [class.bg-slate-200]="!history?.consumesAlcohol"
+              [class.text-slate-500]="!history?.consumesAlcohol">
+              {{ history?.consumesAlcohol ? 'يتناول كحول' : 'لا يتناول كحول' }}
+            </span>
+          </div>
+          @if (hasValue(history?.otherHabits)) {
+            <p class="text-sm text-slate-600 mt-2">{{ history!.otherHabits }}</p>
+          }
+        </div>
+  
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 md:col-span-2">
+          <h4 class="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+            <i class="pi pi-file text-slate-500 text-sm"></i>
+            ملاحظات إضافية
+          </h4>
+          <p class="text-sm text-slate-600 whitespace-pre-line">
+            {{ hasValue(history?.additionalNotes) ? history!.additionalNotes : '—' }}
+          </p>
+        </div>
+      </div>
+    }
+  
+    <!-- Edit mode -->
+    @else {
+      <div class="space-y-5">
+  
+        <div class="p-4 rounded-xl bg-red-50 border border-red-200">
+          <label class="block font-semibold text-red-700 mb-2 flex items-center gap-2">
+            <i class="pi pi-exclamation-triangle"></i>
+            تنبيه طبي حرج
+          </label>
+          <textarea
+            pTextarea
+            [(ngModel)]="form.criticalAlerts"
+            rows="2"
+            class="w-full"
+            placeholder="مثال: مريض قلب - يحتاج احتياطات">
+          </textarea>
+        </div>
+  
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">الأمراض المزمنة</label>
+            <textarea pTextarea [(ngModel)]="form.chronicDiseases" rows="2" class="w-full"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">السوابق المرضية</label>
+            <textarea pTextarea [(ngModel)]="form.pastMedicalHistory" rows="2" class="w-full"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">السوابق الجراحية</label>
+            <textarea pTextarea [(ngModel)]="form.pastSurgicalHistory" rows="2" class="w-full"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">الأدوية الحالية</label>
+            <textarea pTextarea [(ngModel)]="form.currentMedications" rows="2" class="w-full"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">الحساسية الدوائية</label>
+            <textarea pTextarea [(ngModel)]="form.drugAllergies" rows="2" class="w-full"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">حساسية المواد</label>
+            <textarea pTextarea [(ngModel)]="form.materialAllergies" rows="2" class="w-full"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">حساسية الطعام</label>
+            <textarea pTextarea [(ngModel)]="form.foodAllergies" rows="2" class="w-full"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">عادات أخرى</label>
+            <textarea pTextarea [(ngModel)]="form.otherHabits" rows="2" class="w-full"></textarea>
+          </div>
+        </div>
+  
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <div class="flex items-center gap-2">
+            <p-toggleswitch [(ngModel)]="form.isPregnant" />
+            <label class="text-sm text-slate-700">حامل</label>
+          </div>
+          <div class="flex items-center gap-2">
+            <p-toggleswitch [(ngModel)]="form.isBreastfeeding" />
+            <label class="text-sm text-slate-700">مرضع</label>
+          </div>
+          <div class="flex items-center gap-2">
+            <p-toggleswitch [(ngModel)]="form.smokes" />
+            <label class="text-sm text-slate-700">مدخّن</label>
+          </div>
+          <div class="flex items-center gap-2">
+            <p-toggleswitch [(ngModel)]="form.consumesAlcohol" />
+            <label class="text-sm text-slate-700">كحول</label>
+          </div>
+        </div>
+  
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات إضافية</label>
+          <textarea pTextarea [(ngModel)]="form.additionalNotes" rows="3" class="w-full"></textarea>
+        </div>
+  
+        <div class="flex items-center gap-2 justify-end">
+          <button
+            pButton
+            type="button"
+            label="إلغاء"
+            severity="secondary"
+            [outlined]="true"
+            (click)="cancel()">
+          </button>
+          <button
+            pButton
+            type="button"
+            label="حفظ"
+            icon="pi pi-check"
+            [loading]="saving()"
+            (click)="save()">
+          </button>
+        </div>
+      </div>
+    }
+  </div>

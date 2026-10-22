@@ -1,0 +1,65 @@
+<div class="space-y-6">
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">الأدوار</h1>
+        <p class="text-slate-500 text-sm mt-1">إدارة الأدوار والصلاحيات</p>
+      </div>
+      <button pButton type="button" label="إضافة دور" icon="pi pi-plus" (click)="createRole()"></button>
+    </div>
+  
+    @if (loading()) {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        @for (i of [1,2,3]; track i) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3">
+            <p-skeleton width="60%" height="1.25rem" />
+            <p-skeleton width="80%" height="1rem" />
+          </div>
+        }
+      </div>
+    }
+  
+    @else if (roles().length === 0) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-16 text-center">
+        <i class="pi pi-shield text-slate-300 text-4xl mb-3 block"></i>
+        <h3 class="text-lg font-semibold text-slate-600 mb-1">لا توجد أدوار</h3>
+        <p class="text-sm text-slate-400 mb-6">ابدأ بإضافة أول دور</p>
+        <button pButton type="button" label="إضافة دور" icon="pi pi-plus" (click)="createRole()"></button>
+      </div>
+    }
+  
+    @else {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        @for (role of roles(); track role.id) {
+          <div
+            class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 hover:shadow-lg hover:border-primary-300 transition-all cursor-pointer"
+            (click)="openRole(role.id)">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-12 h-12 rounded-xl bg-primary-50 flex items-center justify-center">
+                <i class="pi pi-shield text-primary-600"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 class="font-bold text-slate-800 truncate">{{ role.name }}</h3>
+                @if (role.description) {
+                  <p class="text-sm text-slate-500 truncate">{{ role.description }}</p>
+                }
+              </div>
+            </div>
+  
+            <div class="flex items-center gap-3 pt-3 border-t border-slate-100 text-sm">
+              <div class="flex items-center gap-1 text-slate-600">
+                <i class="pi pi-users text-slate-400 text-xs"></i>
+                <span>{{ role.userCount ?? 0 }}</span>
+              </div>
+              <div class="flex items-center gap-1 text-slate-600">
+                <i class="pi pi-key text-slate-400 text-xs"></i>
+                <span>{{ role.permissionCount ?? 0 }}</span>
+              </div>
+              <div class="flex-1"></div>
+              <i class="pi pi-arrow-left text-slate-400"></i>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>

@@ -1,0 +1,90 @@
+<div class="relative">
+    <!-- Trigger button -->
+    <button
+      type="button"
+      (click)="toggle()"
+      class="w-full flex items-center justify-between px-3 py-2 border rounded-lg transition-all text-sm"
+      [class.border-primary-500]="open()"
+      [class.ring-2]="open()"
+      [class.ring-primary-100]="open()"
+      [class.border-slate-300]="!open()"
+      [class.bg-white]="!open()">
+      <div class="flex items-center gap-2">
+        @if (getSelectedShade(); as shade) {
+          <div class="w-6 h-6 rounded-md border border-slate-300 shadow-sm" [style.background]="shade.color"></div>
+          <span class="font-mono font-semibold text-slate-700">{{ shade.code }}</span>
+        } @else {
+          <div class="w-6 h-6 rounded-md border-2 border-dashed border-slate-300"></div>
+          <span class="text-slate-400">اختر اللون</span>
+        }
+      </div>
+      <i class="pi pi-chevron-down text-slate-400 text-xs transition-transform" [class.rotate-180]="open()"></i>
+    </button>
+  
+    @if (value) {
+      <button
+        type="button"
+        (click)="clear($event)"
+        class="absolute top-1/2 left-2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-100 hover:bg-red-100 flex items-center justify-center transition-colors">
+        <i class="pi pi-times text-slate-500 hover:text-red-600 text-[10px]"></i>
+      </button>
+    }
+  </div>
+  
+  <!-- Backdrop -->
+  @if (open()) {
+    <div class="fixed inset-0 z-40" (click)="close()"></div>
+  
+    <!-- Picker popup -->
+    <div class="absolute z-50 mt-2 right-0 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 animate-shade-pop">
+  
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <i class="pi pi-palette text-primary-600"></i>
+          <span class="font-bold text-slate-700 text-sm">دليل ألوان VITA</span>
+        </div>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-primary-50 text-primary-600 font-semibold">Classical</span>
+      </div>
+  
+      <!-- Groups -->
+      <div class="space-y-3">
+        @for (group of groups; track group) {
+          <div>
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ group }}</span>
+              <div class="flex-1 h-px bg-slate-100"></div>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              @for (shade of getShadesByGroup(group); track shade.code) {
+                <button
+                  type="button"
+                  (click)="select(shade)"
+                  class="group relative w-11 h-11 rounded-xl border-2 transition-all hover:scale-110 hover:shadow-lg focus:outline-none"
+                  [class.border-primary-600]="value === shade.code"
+                  [class.ring-2]="value === shade.code"
+                  [class.ring-primary-200]="value === shade.code"
+                  [class.border-slate-200]="value !== shade.code"
+                  [style.background]="shade.color"
+                  [title]="shade.code">
+                  <span
+                    class="absolute inset-x-0 bottom-0 text-[9px] font-bold text-center py-0.5 rounded-b-lg"
+                    [class.bg-white]="value !== shade.code"
+                    [class.bg-primary-600]="value === shade.code"
+                    [class.text-primary-600]="value !== shade.code"
+                    [class.text-white]="value === shade.code">
+                    {{ shade.code }}
+                  </span>
+                  @if (value === shade.code) {
+                    <div class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary-600 flex items-center justify-center shadow">
+                      <i class="pi pi-check text-white text-[8px]"></i>
+                    </div>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }

@@ -1,0 +1,337 @@
+<div class="max-w-5xl mx-auto space-y-6">
+
+    @if (loading()) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-3">
+        <p-skeleton width="40%" height="2rem" />
+        <p-skeleton width="60%" height="1rem" />
+      </div>
+    }
+  
+    @else if (order(); as o) {
+  
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-md">
+              <i class="pi pi-send text-white text-xl"></i>
+            </div>
+            <div>
+              <div class="font-mono text-xs text-slate-400">{{ o.orderNumber }}</div>
+              <h1 class="text-xl font-bold text-slate-800">{{ o.labOrderTypeNameAr }}</h1>
+              <p class="text-sm text-slate-500 mt-0.5">
+                {{ o.orderedAt | date:'dd/MM/yyyy' }} · {{ o.patientName }}
+              </p>
+            </div>
+          </div>
+  
+          <div class="flex flex-wrap items-center gap-2">
+            <button pButton type="button" label="رجوع" icon="pi pi-arrow-right" severity="secondary" [outlined]="true" (click)="goBack()"></button>
+            @if (canEdit()) {
+              <button pButton type="button" label="تعديل" icon="pi pi-pencil" (click)="openEdit()"></button>
+            }
+            @if (canDelete()) {
+              <button pButton type="button" icon="pi pi-trash" severity="danger" [outlined]="true" (click)="confirmDelete()"></button>
+            }
+          </div>
+        </div>
+  
+        <div class="mt-6 pt-6 border-t border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <div class="text-xs text-slate-500 mb-1">المخبر</div>
+            <div class="font-semibold text-slate-800 text-sm">{{ o.dentalLabName }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 mb-1">العيادة</div>
+            <div class="font-semibold text-slate-800 text-sm">{{ o.clinicName }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 mb-1">التسليم المتوقع</div>
+            <div class="font-semibold text-slate-800 text-sm">
+              {{ o.expectedDeliveryDate ? (o.expectedDeliveryDate | date:'dd/MM/yyyy') : '—' }}
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 mb-1">الحالة</div>
+            <span class="inline-flex text-xs px-3 py-1 rounded-full font-semibold" [class]="getStatusColor(o.status)">
+              {{ getStatusName(o.status) }}
+            </span>
+          </div>
+        </div>
+  
+        <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
+          @if (canSend()) {
+            <button pButton type="button" label="إرسال للمخبر" icon="pi pi-send" size="small" [loading]="actionLoading()" (click)="updateStatus(2)"></button>
+          }
+          @if (canResend()) {
+            <button pButton type="button" label="إعادة الإرسال للمخبر" icon="pi pi-send" size="small" [loading]="actionLoading()" (click)="updateStatus(2)"></button>
+          }
+          @if (canReceive()) {
+            <button pButton type="button" label="استلام العمل" icon="pi pi-check" size="small" severity="success" [loading]="actionLoading()" (click)="updateStatus(4, true)"></button>
+          }
+          @if (canFit()) {
+            <button pButton type="button" label="تسجيل التركيب" icon="pi pi-check-circle" size="small" severity="success" [loading]="actionLoading()" (click)="updateStatus(5, true)"></button>
+          }
+          @if (canRemake()) {
+            <button pButton type="button" label="إعادة تصنيع" icon="pi pi-refresh" size="small" severity="warn" [outlined]="true" [loading]="actionLoading()" (click)="updateStatus(7)"></button>
+          }
+          @if (canCancel()) {
+            <button pButton type="button" label="إلغاء" icon="pi pi-times" size="small" severity="danger" [outlined]="true" [loading]="actionLoading()" (click)="updateStatus(6)"></button>
+          }
+        </div>
+      </div>
+  
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  
+        @if (o.teeth.length > 0) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+            <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm">
+              <i class="pi pi-th-large text-primary-600"></i>
+              الأسنان المستهدفة
+            </h3>
+            <div class="flex flex-wrap gap-2">
+              @for (t of o.teeth; track t.patientToothId) {
+                <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary-50 border-2 border-primary-200 font-bold text-primary-700">
+                  {{ t.toothNumber }}
+                </span>
+              }
+            </div>
+          </div>
+        }
+  
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+          <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm">
+            <i class="pi pi-info-circle text-primary-600"></i>
+            التفاصيل
+          </h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between border-b border-slate-100 pb-2">
+              <span class="text-slate-500">اللون</span>
+              <span class="font-semibold text-slate-700">{{ o.shade || '—' }}</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-100 pb-2">
+              <span class="text-slate-500">المادة</span>
+              <span class="font-semibold text-slate-700">{{ o.material || '—' }}</span>
+            </div>
+            <div class="border-b border-slate-100 pb-2">
+              <div class="text-slate-500 mb-1">تعليمات</div>
+              <div class="text-slate-700 whitespace-pre-line">{{ o.instructions || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-slate-500 mb-1">ملاحظات</div>
+              <div class="text-slate-700 whitespace-pre-line">{{ o.notes || '—' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+              <i class="pi pi-dollar text-emerald-600"></i>
+              الدفعات
+            </h3>
+            @if (canPay()) {
+              <button pButton type="button" label="دفعة" icon="pi pi-plus" size="small" (click)="openPaymentDialog()"></button>
+            }
+          </div>
+  
+          @if (o.payments.length === 0) {
+            <div class="p-6 text-center bg-slate-50 rounded-xl">
+              <i class="pi pi-wallet text-slate-300 text-2xl mb-2 block"></i>
+              <p class="text-sm text-slate-400">لا توجد دفعات</p>
+            </div>
+          } @else {
+            <div class="space-y-2">
+              @for (p of o.payments; track p.id) {
+                <div class="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+                      <i class="pi pi-check text-emerald-600 text-sm"></i>
+                    </div>
+                    <div>
+                      <div class="font-semibold text-emerald-700">
+                        {{ p.amount | number:'1.0-2' }} {{ p.currencyCode }}
+                      </div>
+                      <div class="text-xs text-slate-500">
+                        {{ getPaymentMethodName(p.method) }} · {{ p.paidAt | date:'dd/MM/yyyy' }}
+                      </div>
+                    </div>
+                  </div>
+                  <button pButton type="button" icon="pi pi-trash" severity="danger" [text]="true" size="small" (click)="deletePayment(p.id)"></button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+  
+        <div class="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-6 border border-primary-200">
+          <h3 class="font-bold text-primary-800 mb-4">ملخص التكلفة</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between text-sm">
+              <span class="text-primary-700">التكلفة التقديرية</span>
+              <span class="font-semibold text-primary-900">
+                {{ o.estimatedCost !== null && o.estimatedCost !== undefined ? (o.estimatedCost | number:'1.0-2') : '—' }}
+              </span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-primary-700">التكلفة النهائية</span>
+              <span class="font-semibold text-primary-900">
+                {{ o.finalCost !== null && o.finalCost !== undefined ? (o.finalCost | number:'1.0-2') : '—' }}
+              </span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-emerald-700">المدفوع</span>
+              <span class="font-semibold text-emerald-800">{{ totalPaid() | number:'1.0-2' }}</span>
+            </div>
+            <div class="border-t border-primary-300 pt-3 flex justify-between items-center">
+              <span class="font-bold text-primary-800">المتبقي</span>
+              <span class="text-2xl font-bold" [class.text-red-600]="remaining() > 0" [class.text-emerald-600]="remaining() === 0">
+                {{ remaining() | number:'1.0-2' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+    }
+  </div>
+  
+  <!-- Payment dialog -->
+  <p-dialog
+    [visible]="paymentDialog()"
+    (visibleChange)="paymentDialog.set($event)"
+    header="تسجيل دفعة"
+    [modal]="true"
+    [style]="{ width: '480px' }"
+    appendTo="body">
+  
+    <div class="space-y-4 py-2">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">المبلغ</label>
+        <p-inputnumber [(ngModel)]="paymentForm.amount" [min]="0.01" [minFractionDigits]="0" [maxFractionDigits]="2" styleClass="w-full" inputStyleClass="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">طريقة الدفع</label>
+        <p-select [(ngModel)]="paymentForm.method" [options]="paymentMethods" optionLabel="label" optionValue="value" styleClass="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">مرجع (اختياري)</label>
+        <input pInputText [(ngModel)]="paymentForm.reference" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات</label>
+        <textarea pTextarea [(ngModel)]="paymentForm.notes" rows="2" class="w-full"></textarea>
+      </div>
+    </div>
+  
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="paymentDialog.set(false)"></button>
+      <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="paymentSaving()" (click)="savePayment()"></button>
+    </ng-template>
+  </p-dialog>
+  
+  <!-- Final cost dialog -->
+  <p-dialog
+    [visible]="finalCostDialog()"
+    (visibleChange)="finalCostDialog.set($event)"
+    header="التكلفة النهائية"
+    [modal]="true"
+    [style]="{ width: '420px' }"
+    appendTo="body">
+  
+    <div class="space-y-4 py-2">
+      <div class="p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-start gap-2">
+        <i class="pi pi-info-circle text-amber-600 mt-0.5"></i>
+        <p class="text-sm text-amber-700">أدخل التكلفة النهائية للعمل المُستلم من المخبر.</p>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">التكلفة النهائية</label>
+        <p-inputnumber
+          [ngModel]="finalCostValue()"
+          (ngModelChange)="finalCostValue.set($event)"
+          [min]="0"
+          [minFractionDigits]="0"
+          [maxFractionDigits]="2"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+          [suffix]="' ' + (order()?.currencyCode ?? '')" />
+      </div>
+    </div>
+  
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="finalCostDialog.set(false)"></button>
+      <button pButton type="button" label="تأكيد" icon="pi pi-check" [loading]="finalCostSaving()" (click)="confirmFinalCost()"></button>
+    </ng-template>
+  </p-dialog>
+  
+  <!-- Edit dialog -->
+  <p-dialog
+    [visible]="editDialog()"
+    (visibleChange)="editDialog.set($event)"
+    header="تعديل الطلب"
+    [modal]="true"
+    [style]="{ width: '600px' }"
+    appendTo="body">
+  
+    <div class="space-y-4 py-2">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">التكلفة التقديرية</label>
+          <p-inputnumber [(ngModel)]="editForm.estimatedCost" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="2" styleClass="w-full" inputStyleClass="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">تاريخ التسليم</label>
+          <p-datepicker [(ngModel)]="editForm.expectedDeliveryDate" dateFormat="dd/mm/yy" styleClass="w-full" appendTo="body" />
+        </div>
+      </div>
+  
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">الأسنان</label>
+        <p-multiselect
+          [(ngModel)]="editForm.patientToothIds"
+          [options]="teethOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="اختر الأسنان"
+          [filter]="true"
+          display="chip"
+          styleClass="w-full" />
+      </div>
+  
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">اللون</label>
+          <app-shade-picker [(value)]="editForm.shade" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">المادة</label>
+          <p-select
+            [(ngModel)]="editForm.material"
+            [options]="materialOptions()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="اختر المادة"
+            [filter]="true"
+            [showClear]="true"
+            styleClass="w-full" />
+        </div>
+      </div>
+  
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">تعليمات</label>
+        <textarea pTextarea [(ngModel)]="editForm.instructions" rows="2" class="w-full"></textarea>
+      </div>
+  
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات</label>
+        <textarea pTextarea [(ngModel)]="editForm.notes" rows="2" class="w-full"></textarea>
+      </div>
+    </div>
+  
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="editDialog.set(false)"></button>
+      <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="editSaving()" (click)="saveEdit()"></button>
+    </ng-template>
+  </p-dialog>

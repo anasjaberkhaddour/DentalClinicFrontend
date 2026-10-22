@@ -1,0 +1,172 @@
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <h3 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+      <i class="pi pi-send text-primary-600"></i>
+      طلبات المخبر
+    </h3>
+    <button
+      pButton
+      type="button"
+      label="طلب جديد"
+      icon="pi pi-plus"
+      [routerLink]="['/patients', patientId, 'lab-orders', 'create']">
+    </button>
+  </div>
+
+  <!-- Filters -->
+  @if (!loading() && orders().length > 0) {
+    <div class="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        class="px-4 py-2 rounded-xl text-sm font-semibold transition-all border"
+        [class.bg-primary-600]="filter() === 'all'"
+        [class.text-white]="filter() === 'all'"
+        [class.border-primary-600]="filter() === 'all'"
+        [class.bg-white]="filter() !== 'all'"
+        [class.text-slate-600]="filter() !== 'all'"
+        [class.border-slate-200]="filter() !== 'all'"
+        (click)="setFilter('all')">
+        الكل
+        <span class="text-xs mr-1 opacity-70">({{ counts().all }})</span>
+      </button>
+      <button
+        type="button"
+        class="px-4 py-2 rounded-xl text-sm font-semibold transition-all border"
+        [class.bg-primary-600]="filter() === 'active'"
+        [class.text-white]="filter() === 'active'"
+        [class.border-primary-600]="filter() === 'active'"
+        [class.bg-white]="filter() !== 'active'"
+        [class.text-slate-600]="filter() !== 'active'"
+        [class.border-slate-200]="filter() !== 'active'"
+        (click)="setFilter('active')">
+        نشط
+        <span class="text-xs mr-1 opacity-70">({{ counts().active }})</span>
+      </button>
+      <button
+        type="button"
+        class="px-4 py-2 rounded-xl text-sm font-semibold transition-all border"
+        [class.bg-primary-600]="filter() === 'done'"
+        [class.text-white]="filter() === 'done'"
+        [class.border-primary-600]="filter() === 'done'"
+        [class.bg-white]="filter() !== 'done'"
+        [class.text-slate-600]="filter() !== 'done'"
+        [class.border-slate-200]="filter() !== 'done'"
+        (click)="setFilter('done')">
+        مكتمل
+        <span class="text-xs mr-1 opacity-70">({{ counts().done }})</span>
+      </button>
+      <button
+        type="button"
+        class="px-4 py-2 rounded-xl text-sm font-semibold transition-all border"
+        [class.bg-primary-600]="filter() === 'cancelled'"
+        [class.text-white]="filter() === 'cancelled'"
+        [class.border-primary-600]="filter() === 'cancelled'"
+        [class.bg-white]="filter() !== 'cancelled'"
+        [class.text-slate-600]="filter() !== 'cancelled'"
+        [class.border-slate-200]="filter() !== 'cancelled'"
+        (click)="setFilter('cancelled')">
+        ملغى
+        <span class="text-xs mr-1 opacity-70">({{ counts().cancelled }})</span>
+      </button>
+    </div>
+  }
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (i of [1,2,3]; track i) {
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3">
+          <p-skeleton width="60%" height="1.25rem" />
+          <p-skeleton width="40%" height="1rem" />
+          <p-skeleton width="80%" height="1rem" />
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Empty -->
+  @else if (filteredOrders().length === 0) {
+    <div class="p-12 text-center bg-slate-50 rounded-xl border border-slate-200">
+      <i class="pi pi-send text-slate-300 text-3xl mb-3 block"></i>
+      <h4 class="font-semibold text-slate-600 mb-1">
+        {{ orders().length === 0 ? 'لا توجد طلبات' : 'لا توجد طلبات في هذا التصنيف' }}
+      </h4>
+      <p class="text-sm text-slate-400">
+        {{ orders().length === 0 ? 'لم يتم إرسال أي طلب إلى المخبر لهذا المريض' : 'جرّب تصنيفاً آخر' }}
+      </p>
+    </div>
+  }
+
+  <!-- Cards grid -->
+  @else {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (order of filteredOrders(); track order.id) {
+        <div
+          class="group bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl hover:border-primary-300 transition-all cursor-pointer relative"
+          [routerLink]="['/patients', patientId, 'lab-orders', order.id]">
+
+          <!-- Header gradient -->
+          <div class="h-16 bg-gradient-to-br relative" [class]="getStatusBorderColor(order.status)">
+            <div class="absolute top-3 left-3">
+              <span class="text-xs px-2 py-0.5 rounded-full bg-white/90 text-slate-700 font-semibold shadow">
+                {{ getStatusName(order.status) }}
+              </span>
+            </div>
+            <div class="absolute -bottom-8 right-4">
+              <div class="w-16 h-16 rounded-2xl bg-white flex items-center justify-center border-4 border-white shadow-md">
+                <i class="pi pi-send text-primary-600 text-xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="pt-10 px-5 pb-5">
+            <div class="font-mono text-xs text-slate-400 mb-1">{{ order.orderNumber }}</div>
+            <h3 class="font-bold text-slate-800 text-lg truncate">{{ order.labOrderTypeName }}</h3>
+
+            <div class="mt-3 space-y-2 text-sm">
+              <div class="flex items-center gap-2 text-slate-600">
+                <i class="pi pi-building text-slate-400 text-xs"></i>
+                <span class="truncate">{{ order.dentalLabName }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-slate-600">
+                <i class="pi pi-th-large text-slate-400 text-xs"></i>
+                <span>{{ order.toothCount }} سن</span>
+              </div>
+              <div class="flex items-center gap-2 text-slate-600">
+                <i class="pi pi-calendar text-slate-400 text-xs"></i>
+                <span>{{ order.orderedAt | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </div>
+
+            <div class="mt-3 p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between">
+              <span class="text-xs font-medium text-slate-500">التكلفة التقديرية</span>
+              <span class="text-sm font-bold text-slate-700">
+                @if (order.estimatedCost) {
+                  {{ order.estimatedCost | number:'1.0-0' }} {{ order.currencyCode }}
+                } @else {
+                  —
+                }
+              </span>
+            </div>
+
+            @if (order.expectedDeliveryDate) {
+              <div class="mt-2 text-xs text-slate-500 flex items-center gap-1">
+                <i class="pi pi-clock"></i>
+                التسليم المتوقع: {{ order.expectedDeliveryDate | date:'dd/MM/yyyy' }}
+              </div>
+            }
+
+            <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs text-slate-400">{{ order.toothCount }} سن مستهدف</span>
+              <i class="pi pi-arrow-left text-slate-400 group-hover:text-primary-600 transition-colors"></i>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+</div>

@@ -1,0 +1,128 @@
+<div class="space-y-6">
+
+    <div class="flex items-center justify-between print:hidden">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">صفحة المتابعة المالية</h1>
+        <p class="text-slate-500 text-sm mt-1">اختر المريض لعرض كشفه المالي</p>
+      </div>
+      <button pButton type="button" label="رجوع" icon="pi pi-arrow-right" severity="secondary" [outlined]="true" (click)="goBack()"></button>
+    </div>
+  
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 print:hidden">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-semibold text-slate-700 mb-2">المريض</label>
+          <p-select
+            [(ngModel)]="selectedPatientId"
+            [options]="patients()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="اختر المريض"
+            [filter]="true"
+            [loading]="loadingPatients()"
+            appendTo="body"
+            styleClass="w-full" />
+        </div>
+        <div class="flex items-end">
+          <button
+            pButton
+            type="button"
+            label="عرض التقرير"
+            icon="pi pi-search"
+            [loading]="loadingReport()"
+            [disabled]="!selectedPatientId()"
+            (click)="loadReport()">
+          </button>
+        </div>
+      </div>
+    </div>
+  
+    @if (loadingReport()) {
+      <div class="bg-white rounded-2xl p-8">
+        <p-skeleton height="30rem" />
+      </div>
+    }
+  
+    @else if (report(); as r) {
+  
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden pdf-container">
+  
+        <div class="bg-primary-700 text-white p-6">
+          <div class="flex items-center gap-4">
+            <div class="w-20 h-20 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 shadow-sm p-1">
+              <img src="assets/512X512.png" alt="Logo" class="w-full h-full object-contain" />
+            </div>
+            <div class="flex-1">
+              <h1 class="text-2xl font-bold mb-1">صفحة المتابعة المالية</h1>
+              <div class="text-sm opacity-90">
+                @if (r.doctorFullName) { <span>{{ r.doctorFullName }}</span> }
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <div class="p-6 space-y-4">
+  
+          <div>
+            <div class="bg-primary-50 border border-primary-200 px-4 py-2 font-bold text-primary-800 text-sm rounded-t-lg">بيانات المريض</div>
+            <div class="grid grid-cols-2 gap-x-8 gap-y-2 p-4 border border-t-0 border-primary-200 rounded-b-lg text-sm">
+              <div><span class="text-slate-500 me-3">اسم المريض:</span> <span class="font-semibold text-slate-800">{{ r.patientFullName }}</span></div>
+              <div><span class="text-slate-500 me-3">رقم الملف / التاريخ:</span> <span class="font-semibold text-slate-800">{{ r.fileNumber }} / {{ r.reportDate | date:'dd/MM/yyyy' }}</span></div>
+            </div>
+          </div>
+  
+          <div>
+            <div class="bg-primary-50 border border-primary-200 px-4 py-2 font-bold text-primary-800 text-sm rounded-t-lg">جدول المبالغ والدفعات</div>
+            <div class="border border-t-0 border-primary-200 rounded-b-lg overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                  <tr class="text-right text-slate-700">
+                    <th class="px-3 py-2 font-semibold">التاريخ</th>
+                    <th class="px-3 py-2 font-semibold">الإجراء العلاجي</th>
+                    <th class="px-3 py-2 font-semibold">المبلغ</th>
+                    <th class="px-3 py-2 font-semibold">المدفوع</th>
+                    <th class="px-3 py-2 font-semibold">المتبقي</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @if (r.items.length === 0) {
+                    <tr>
+                      <td colspan="5" class="px-3 py-6 text-center text-slate-400">لا توجد إجراءات مسجّلة</td>
+                    </tr>
+                  } @else {
+                    @for (it of r.items; track it.date) {
+                      <tr class="border-b border-slate-100">
+                        <td class="px-3 py-2 text-slate-600 whitespace-nowrap">{{ it.date | date:'dd/MM/yyyy' }}</td>
+                        <td class="px-3 py-2 text-slate-800">{{ it.description || '—' }}</td>
+                        <td class="px-3 py-2 text-slate-800">{{ it.amount | number:'1.0-2' }} <span class="text-xs text-slate-500">{{ r.currencySymbol }}</span></td>
+                        <td class="px-3 py-2 text-emerald-700">{{ it.paid | number:'1.0-2' }}</td>
+                        <td class="px-3 py-2 text-red-600 font-semibold">{{ it.remaining | number:'1.0-2' }}</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+                <tfoot class="bg-slate-50 border-t-2 border-slate-300 font-bold">
+                  <tr class="text-right">
+                    <td colspan="2" class="px-3 py-2">الإجمالي</td>
+                    <td class="px-3 py-2">{{ r.totalAmount | number:'1.0-2' }} {{ r.currencySymbol }}</td>
+                    <td class="px-3 py-2 text-emerald-700">{{ r.totalPaid | number:'1.0-2' }}</td>
+                    <td class="px-3 py-2 text-red-600">{{ r.totalRemaining | number:'1.0-2' }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+  
+          <div>
+            <div class="bg-primary-50 border border-primary-200 px-4 py-2 font-bold text-primary-800 text-sm rounded-t-lg">ملاحظات</div>
+            <div class="p-4 border border-t-0 border-primary-200 rounded-b-lg min-h-[4rem]"></div>
+          </div>
+  
+        </div>
+      </div>
+  
+      <div class="flex justify-end gap-2 print:hidden">
+        <button pButton type="button" label="تصدير PDF" icon="pi pi-file-pdf" (click)="exportPdf()"></button>
+      </div>
+    }
+  </div>

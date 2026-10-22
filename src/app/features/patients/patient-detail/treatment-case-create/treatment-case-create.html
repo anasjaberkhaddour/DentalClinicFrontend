@@ -1,0 +1,92 @@
+<div class="max-w-4xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">حالة علاجية جديدة</h1>
+      <p class="text-slate-500 text-sm mt-1">تسجيل حالة علاجية جديدة للمريض</p>
+    </div>
+    <button pButton type="button" label="إلغاء" icon="pi pi-times" severity="secondary" [outlined]="true" (click)="cancel()"></button>
+  </div>
+
+  <!-- Diagnosis -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+    <h2 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+      <i class="pi pi-search text-primary-600"></i>
+      التشخيص
+    </h2>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">العيادة <span class="text-red-500">*</span></label>
+        <p-select [(ngModel)]="form.clinicId" [options]="clinics()" optionLabel="label" optionValue="value" placeholder="اختر العيادة" styleClass="w-full" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">عنوان الحالة</label>
+        <input pInputText [(ngModel)]="form.title" class="w-full" placeholder="مثال: علاج تسوس السن 16" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">التشخيصات <span class="text-red-500">*</span></label>
+        <p-multiselect
+          [(ngModel)]="form.diagnosisTypeIds"
+          [options]="diagnosisOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="اختر التشخيصات"
+          [filter]="true"
+          display="chip"
+          styleClass="w-full" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">الأسنان المستهدفة</label>
+        <p-multiselect
+          [(ngModel)]="form.patientToothIds"
+          [options]="toothOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="اختر الأسنان"
+          [filter]="true"
+          display="chip"
+          styleClass="w-full" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">الشكوى الرئيسية</label>
+        <textarea pTextarea [(ngModel)]="form.chiefComplaint" rows="2" class="w-full"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">الفحص السريري</label>
+        <textarea pTextarea [(ngModel)]="form.clinicalFindings" rows="2" class="w-full"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Treatment Plan -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+    <h2 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+      <i class="pi pi-list-check text-primary-600"></i>
+      خطة العلاج
+    </h2>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">ملخص الخطة</label>
+        <textarea pTextarea [(ngModel)]="form.treatmentPlanSummary" rows="3" class="w-full" placeholder="وصف موجز لخطة العلاج..."></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات</label>
+        <textarea pTextarea [(ngModel)]="form.notes" rows="2" class="w-full"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="sticky bottom-4 bg-white rounded-2xl shadow-lg border border-slate-200 p-4 flex items-center justify-end gap-2">
+    <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="cancel()"></button>
+    <button pButton type="button" label="حفظ الحالة" icon="pi pi-check" [loading]="saving()" (click)="save()"></button>
+  </div>
+</div>

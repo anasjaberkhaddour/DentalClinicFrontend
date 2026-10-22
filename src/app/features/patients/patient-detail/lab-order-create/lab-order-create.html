@@ -1,0 +1,108 @@
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">طلب مخبر جديد</h1>
+        <p class="text-slate-500 text-sm mt-1">إنشاء طلب تصنيع جديد</p>
+      </div>
+      <button pButton type="button" label="إلغاء" icon="pi pi-times" severity="secondary" [outlined]="true" (click)="cancel()"></button>
+    </div>
+  
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h2 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+        <i class="pi pi-info-circle text-primary-600"></i>
+        المعلومات الأساسية
+      </h2>
+  
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">العيادة <span class="text-red-500">*</span></label>
+          <p-select [(ngModel)]="form.clinicId" [options]="clinics()" optionLabel="label" optionValue="value" placeholder="اختر" styleClass="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">المخبر <span class="text-red-500">*</span></label>
+          <p-select [(ngModel)]="form.dentalLabId" [options]="labs()" optionLabel="label" optionValue="value" placeholder="اختر" styleClass="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">نوع العمل <span class="text-red-500">*</span></label>
+          <p-select [(ngModel)]="form.labOrderTypeId" [options]="types()" optionLabel="label" optionValue="value" placeholder="اختر" styleClass="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">العملة <span class="text-red-500">*</span></label>
+          <p-select [(ngModel)]="form.currencyId" [options]="currencies()" optionLabel="label" optionValue="value" placeholder="اختر" styleClass="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">التكلفة التقديرية</label>
+          <p-inputnumber [(ngModel)]="form.estimatedCost" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="2" styleClass="w-full" inputStyleClass="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">تاريخ التسليم المتوقع</label>
+          <p-datepicker [(ngModel)]="form.expectedDeliveryDate" dateFormat="dd/mm/yy" styleClass="w-full" appendTo="body" />
+        </div>
+      </div>
+    </div>
+  
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h2 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+        <i class="pi pi-th-large text-primary-600"></i>
+        الأسنان والتوصيف
+      </h2>
+  
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">الأسنان المستهدفة</label>
+          <p-multiselect
+            [(ngModel)]="form.patientToothIds"
+            [options]="teeth()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="اختر الأسنان"
+            [filter]="true"
+            display="chip"
+            styleClass="w-full" />
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">اللون (Shade)</label>
+            <app-shade-picker [(value)]="form.shade" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">المادة</label>
+            <p-select
+              [(ngModel)]="form.material"
+              [options]="materialOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="اختر المادة"
+              [filter]="true"
+              [showClear]="true"
+              styleClass="w-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h2 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+        <i class="pi pi-file text-primary-600"></i>
+        تعليمات وملاحظات
+      </h2>
+  
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">تعليمات للمخبر</label>
+          <textarea pTextarea [(ngModel)]="form.instructions" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات</label>
+          <textarea pTextarea [(ngModel)]="form.notes" rows="2" class="w-full"></textarea>
+        </div>
+      </div>
+    </div>
+  
+    <div class="sticky bottom-4 bg-white rounded-2xl shadow-lg border border-slate-200 p-4 flex items-center justify-end gap-2">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="cancel()"></button>
+      <button pButton type="button" label="حفظ الطلب" icon="pi pi-check" [loading]="saving()" (click)="save()"></button>
+    </div>
+  
+  </div>

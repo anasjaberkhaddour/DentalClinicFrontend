@@ -1,0 +1,143 @@
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <h3 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+      <i class="pi pi-calendar text-primary-600"></i>
+      المواعيد
+    </h3>
+
+    <button
+      pButton
+      type="button"
+      label="حجز موعد"
+      icon="pi pi-calendar-plus"
+      [routerLink]="['/patients', patientId, 'appointments', 'create']">
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="space-y-3">
+      @for (i of [1,2]; track i) {
+        <div class="p-4 rounded-xl border border-slate-200 space-y-2">
+          <p-skeleton width="30%" height="1rem" />
+          <p-skeleton width="60%" height="0.75rem" />
+        </div>
+      }
+    </div>
+  }
+
+  @else {
+
+    <!-- Upcoming -->
+    <div>
+      <h4 class="font-semibold text-slate-700 mb-3 flex items-center gap-2 text-sm uppercase tracking-wide">
+        <i class="pi pi-clock text-primary-500"></i>
+        المواعيد القادمة
+        <span class="px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 text-xs">
+          {{ upcoming().length }}
+        </span>
+      </h4>
+
+      @if (upcoming().length === 0) {
+        <div class="p-8 text-center bg-slate-50 rounded-xl border border-slate-200">
+          <i class="pi pi-calendar text-slate-300 text-2xl mb-2 block"></i>
+          <p class="text-sm text-slate-400">لا توجد مواعيد قادمة</p>
+        </div>
+      } @else {
+        <div class="space-y-2">
+          @for (apt of upcoming(); track apt.id) {
+            <div
+              class="p-4 rounded-xl bg-white border border-slate-200 hover:border-primary-300 hover:shadow-sm transition-all flex items-center justify-between gap-4 cursor-pointer"
+              [routerLink]="['/patients', patientId, 'appointments', apt.id]">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-xl bg-primary-100 flex flex-col items-center justify-center flex-shrink-0">
+                  <div class="text-xs text-primary-600 font-medium">{{ apt.scheduledAt | date:'MMM' }}</div>
+                  <div class="text-lg font-bold text-primary-700 leading-none">{{ apt.scheduledAt | date:'dd' }}</div>
+                </div>
+                <div>
+                  <div class="font-semibold text-slate-800">
+                    {{ apt.scheduledAt | date:'yyyy/MM/dd' }} . {{ getDayName(apt.scheduledAt) }}
+                  </div>
+                  <div class="text-sm text-slate-500 flex items-center gap-3 mt-1">
+                    <span><i class="pi pi-clock text-xs"></i> {{ apt.scheduledAt | date:'HH:mm' }}</span>
+                    <span>{{ apt.durationMinutes }} دقيقة</span>
+                    <span>{{ apt.clinicName }}</span>
+                  </div>
+                  @if (apt.reason) {
+                    <div class="text-sm text-slate-600 mt-2">
+                      <i class="pi pi-comment text-slate-400 text-xs"></i>
+                      {{ apt.reason }}
+                    </div>
+                  }
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span
+                  class="text-xs px-3 py-1 rounded-full font-semibold"
+                  [class.bg-emerald-100]="apt.status === 2"
+                  [class.text-emerald-700]="apt.status === 2"
+                  [class.bg-blue-100]="apt.status === 1 || apt.status === 7"
+                  [class.text-blue-700]="apt.status === 1 || apt.status === 7">
+                  {{ getStatusName(apt.status) }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Past -->
+    <div>
+      <h4 class="font-semibold text-slate-700 mb-3 flex items-center gap-2 text-sm uppercase tracking-wide">
+        <i class="pi pi-history text-slate-500"></i>
+        المواعيد السابقة
+        <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs">
+          {{ past().length }}
+        </span>
+      </h4>
+
+      @if (past().length === 0) {
+        <div class="p-8 text-center bg-slate-50 rounded-xl border border-slate-200">
+          <i class="pi pi-history text-slate-300 text-2xl mb-2 block"></i>
+          <p class="text-sm text-slate-400">لا توجد مواعيد سابقة</p>
+        </div>
+      } @else {
+        <div class="space-y-2">
+          @for (apt of past(); track apt.id) {
+            <div
+              class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4 opacity-80 cursor-pointer hover:opacity-100 transition-opacity"
+              [routerLink]="['/patients', patientId, 'appointments', apt.id]">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-xl bg-slate-200 flex flex-col items-center justify-center flex-shrink-0">
+                  <div class="text-xs text-slate-500 font-medium">{{ apt.scheduledAt | date:'MMM' }}</div>
+                  <div class="text-lg font-bold text-slate-600 leading-none">{{ apt.scheduledAt | date:'dd' }}</div>
+                </div>
+                <div>
+                  <div class="font-semibold text-slate-700">
+                    {{ apt.scheduledAt | date:'yyyy/MM/dd' }} . {{ getDayName(apt.scheduledAt) }}
+                  </div>
+                  <div class="text-sm text-slate-500 flex items-center gap-3 mt-1">
+                    <span><i class="pi pi-clock text-xs"></i> {{ apt.scheduledAt | date:'HH:mm' }}</span>
+                    <span>{{ apt.clinicName }}</span>
+                  </div>
+                </div>
+              </div>
+              <span
+                class="text-xs px-3 py-1 rounded-full font-semibold"
+                [class.bg-slate-200]="apt.status === 4"
+                [class.text-slate-700]="apt.status === 4"
+                [class.bg-red-100]="apt.status === 5 || apt.status === 6"
+                [class.text-red-700]="apt.status === 5 || apt.status === 6">
+                {{ getStatusName(apt.status) }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+  }
+</div>

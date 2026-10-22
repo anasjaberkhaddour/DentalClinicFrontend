@@ -1,0 +1,311 @@
+<div class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <h3 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+        <i class="pi pi-th-large text-primary-600"></i>
+        مخطط الأسنان
+      </h3>
+      <div class="flex flex-wrap items-center gap-3 text-xs">
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full border border-slate-300 bg-white"></span>سليم</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-400"></span>مخلوع</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-400"></span>مدفون</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500"></span>تاج</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-purple-500"></span>جسر</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span>زرع</span>
+      </div>
+    </div>
+  
+    @if (loading()) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+        <p-skeleton height="20rem" />
+      </div>
+    }
+  
+    @else {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-8 overflow-x-auto">
+        <div class="min-w-[640px] space-y-2">
+  
+          <div class="space-y-3">
+            <div class="text-xs text-center text-slate-400 font-semibold mb-1">الفك العلوي</div>
+            <div class="flex items-end justify-center gap-0.5 md:gap-1">
+              @for (num of upperRight; track num) {
+                <button
+                  type="button"
+                  class="flex flex-col items-center transition-all hover:scale-110 focus:outline-none rounded-lg"
+                  [class.scale-105]="selectedTooth()?.toothNumber === num"
+                  (click)="selectTooth(getTooth(num))">
+                  <div class="w-10 h-14 md:w-12 md:h-16">
+                    <app-tooth-icon [toothNumber]="num" [status]="getTooth(num)?.status ?? 1" [selected]="false" />
+                  </div>
+                  <span class="text-[10px] md:text-xs text-slate-500 mt-1 font-mono">{{ num }}</span>
+                </button>
+              }
+              <div class="w-px h-16 bg-slate-200 mx-1"></div>
+              @for (num of upperLeft; track num) {
+                <button
+                  type="button"
+                  class="flex flex-col items-center transition-all hover:scale-110 focus:outline-none rounded-lg"
+                  [class.scale-105]="selectedTooth()?.toothNumber === num"
+                  (click)="selectTooth(getTooth(num))">
+                  <div class="w-10 h-14 md:w-12 md:h-16">
+                    <app-tooth-icon [toothNumber]="num" [status]="getTooth(num)?.status ?? 1" [selected]="false" />
+                  </div>
+                  <span class="text-[10px] md:text-xs text-slate-500 mt-1 font-mono">{{ num }}</span>
+                </button>
+              }
+            </div>
+          </div>
+  
+          <div class="h-px bg-slate-200 my-3"></div>
+  
+          <div class="space-y-3">
+            <div class="flex items-start justify-center gap-0.5 md:gap-1">
+              @for (num of lowerRight; track num) {
+                <button
+                  type="button"
+                  class="flex flex-col items-center transition-all hover:scale-110 focus:outline-none rounded-lg"
+                  [class.scale-105]="selectedTooth()?.toothNumber === num"
+                  (click)="selectTooth(getTooth(num))">
+                  <span class="text-[10px] md:text-xs text-slate-500 mb-1 font-mono">{{ num }}</span>
+                  <div class="w-10 h-14 md:w-12 md:h-16">
+                    <app-tooth-icon [toothNumber]="num" [status]="getTooth(num)?.status ?? 1" [selected]="false" />
+                  </div>
+                </button>
+              }
+              <div class="w-px h-16 bg-slate-200 mx-1"></div>
+              @for (num of lowerLeft; track num) {
+                <button
+                  type="button"
+                  class="flex flex-col items-center transition-all hover:scale-110 focus:outline-none rounded-lg"
+                  [class.scale-105]="selectedTooth()?.toothNumber === num"
+                  (click)="selectTooth(getTooth(num))">
+                  <span class="text-[10px] md:text-xs text-slate-500 mb-1 font-mono">{{ num }}</span>
+                  <div class="w-10 h-14 md:w-12 md:h-16">
+                    <app-tooth-icon [toothNumber]="num" [status]="getTooth(num)?.status ?? 1" [selected]="false" />
+                  </div>
+                </button>
+              }
+            </div>
+            <div class="text-xs text-center text-slate-400 font-semibold mt-1">الفك السفلي</div>
+          </div>
+  
+        </div>
+      </div>
+  
+      <!-- Drawer -->
+      @if (selectedTooth(); as tooth) {
+        <div class="fixed inset-0 bg-black/40 z-40" (click)="closeDrawer()"></div>
+  
+        <div class="fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-50 overflow-y-auto animate-slide-in-right">
+  
+          <div class="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+            <div>
+              <div class="text-xs text-slate-500">السن</div>
+              <div class="text-3xl font-bold text-primary-600 font-mono">{{ tooth.toothNumber }}</div>
+            </div>
+            <button pButton type="button" icon="pi pi-times" severity="secondary" [text]="true" [rounded]="true" (click)="closeDrawer()"></button>
+          </div>
+  
+          <div class="p-5 space-y-4">
+  
+            <!-- Status card -->
+            <div class="p-4 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs text-primary-700 mb-1">الحالة الحالية</div>
+                  <div class="font-bold text-primary-800 text-xl">{{ getToothStatusName(tooth.status) }}</div>
+                  @if (tooth.mobility > 0) {
+                    <div class="text-xs text-amber-600 mt-1">{{ getMobilityName(tooth.mobility) }}</div>
+                  }
+                </div>
+                <button pButton type="button" label="تعديل" icon="pi pi-pencil" size="small" [outlined]="true" (click)="openStatusDialog()"></button>
+              </div>
+              @if (tooth.notes) {
+                <div class="mt-3 pt-3 border-t border-primary-200">
+                  <div class="text-xs text-primary-700 mb-1">ملاحظات</div>
+                  <div class="text-sm text-primary-800">{{ tooth.notes }}</div>
+                </div>
+              }
+            </div>
+  
+            <!-- Actions -->
+            <div class="grid grid-cols-2 gap-2">
+              <button pButton type="button" label="إضافة إجراء" icon="pi pi-plus" size="small" (click)="openProcedureDialog()"></button>
+              <button pButton type="button" label="طلب مخبر" icon="pi pi-send" size="small" severity="secondary" [outlined]="true" (click)="createLabOrder()"></button>
+            </div>
+  
+            <!-- History -->
+            <div>
+              <h4 class="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm">
+                <i class="pi pi-history text-primary-600"></i>
+                تاريخ الإجراءات
+                <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{{ toothHistory().length }}</span>
+              </h4>
+  
+              @if (historyLoading()) {
+                <p-skeleton height="4rem" styleClass="mb-2" />
+                <p-skeleton height="4rem" />
+              } @else if (toothHistory().length === 0) {
+                <div class="text-center py-6 bg-slate-50 rounded-xl">
+                  <i class="pi pi-history text-slate-300 text-2xl mb-2 block"></i>
+                  <p class="text-sm text-slate-400">لا توجد إجراءات مسجّلة</p>
+                </div>
+              } @else {
+                <div class="space-y-2">
+                  @for (h of toothHistory(); track h.id) {
+                    <div class="p-3 rounded-xl bg-white border border-slate-200 hover:border-primary-300 transition-colors">
+                      <div class="flex items-start justify-between gap-2">
+                        <div class="flex-1 min-w-0">
+                          <div class="font-semibold text-slate-800 text-sm">{{ h.procedureTypeNameAr }}</div>
+                          @if (h.treatmentCaseNumber) {
+                            <div class="text-xs text-primary-600 font-semibold mt-0.5">
+                              <i class="pi pi-briefcase text-[10px]"></i>
+                              {{ h.treatmentCaseNumber }}
+                            </div>
+                          }
+                          <div class="text-xs text-slate-500 mt-0.5">{{ h.performedAt | date:'dd/MM/yyyy - HH:mm' }}</div>
+                          @if (getSurfaces(h).length > 0) {
+                            <div class="flex flex-wrap gap-1 mt-2">
+                              @for (s of getSurfaces(h); track s) {
+                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 font-bold">{{ s }}</span>
+                              }
+                            </div>
+                          }
+                          @if (h.material) {
+                            <div class="text-xs text-slate-500 mt-1">المادة: {{ h.material }}</div>
+                          }
+                          @if (h.notes) {
+                            <div class="text-xs text-slate-600 mt-1 italic">{{ h.notes }}</div>
+                          }
+                        </div>
+                        <button pButton type="button" icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" size="small" (click)="confirmDeleteHistory(h)"></button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+  
+          </div>
+        </div>
+      }
+    }
+  </div>
+  
+  <!-- Edit status dialog -->
+  <p-dialog
+    [visible]="statusDialog()"
+    (visibleChange)="statusDialog.set($event)"
+    header="تعديل حالة السن"
+    [modal]="true"
+    [style]="{ width: '420px' }"
+    appendTo="body">
+  
+    <div class="space-y-4 py-2">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">الحالة</label>
+        <p-select [(ngModel)]="statusForm.status" [options]="statusOptions" optionLabel="label" optionValue="value" styleClass="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">الحركة</label>
+        <p-select [(ngModel)]="statusForm.mobility" [options]="mobilityOptions" optionLabel="label" optionValue="value" styleClass="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات</label>
+        <textarea pTextarea [(ngModel)]="statusForm.notes" rows="2" class="w-full"></textarea>
+      </div>
+    </div>
+  
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="statusDialog.set(false)"></button>
+      <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="statusSaving()" (click)="saveStatus()"></button>
+    </ng-template>
+  </p-dialog>
+  
+  <!-- Add procedure dialog -->
+  <!-- Add procedure dialog -->
+<p-dialog
+[visible]="procedureDialog()"
+(visibleChange)="procedureDialog.set($event)"
+header="إضافة إجراء"
+[modal]="true"
+[style]="{ width: '600px', height: '80vh' }"
+[contentStyle]="{ padding: '1.5rem', overflowY: 'auto' }"
+appendTo="body">
+
+<div class="space-y-5">
+  <div>
+    <label class="block text-sm font-semibold text-slate-700 mb-2">نوع الإجراء <span class="text-red-500">*</span></label>
+    <p-select [(ngModel)]="procedureForm.procedureTypeId" [options]="procedureTypeOptions()" optionLabel="label" optionValue="value" placeholder="اختر النوع" [filter]="true" styleClass="w-full" />
+  </div>
+  <div>
+    <label class="block text-sm font-semibold text-slate-700 mb-2">الحالة العلاجية (اختياري)</label>
+    <p-select
+      [(ngModel)]="procedureForm.treatmentCaseId"
+      [options]="activeCases()"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="إجراء سريع بدون حالة"
+      [filter]="true"
+      [showClear]="true"
+      styleClass="w-full" />
+  </div>
+  @if (selectedProcedureType()?.requiresSurface) {
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">الأسطح المتأثرة</label>
+      <div class="flex flex-wrap gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
+        <div class="flex items-center gap-2">
+          <p-checkbox [(ngModel)]="procedureForm.isMesial" [binary]="true" inputId="m" />
+          <label for="m" class="text-sm">M (إنسي)</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-checkbox [(ngModel)]="procedureForm.isDistal" [binary]="true" inputId="d" />
+          <label for="d" class="text-sm">D (وحشي)</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-checkbox [(ngModel)]="procedureForm.isBuccal" [binary]="true" inputId="b" />
+          <label for="b" class="text-sm">B (شدقي)</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-checkbox [(ngModel)]="procedureForm.isLingual" [binary]="true" inputId="l" />
+          <label for="l" class="text-sm">L (لساني)</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-checkbox [(ngModel)]="procedureForm.isOcclusal" [binary]="true" inputId="o" />
+          <label for="o" class="text-sm">O (إطباقي)</label>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="grid grid-cols-2 gap-5">
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">المادة</label>
+      <p-select
+        [(ngModel)]="procedureForm.material"
+        [options]="materialOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="اختر المادة"
+        [filter]="true"
+        [showClear]="true"
+        styleClass="w-full" />
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">الحركة</label>
+      <p-select [(ngModel)]="procedureForm.mobility" [options]="mobilityOptions" optionLabel="label" optionValue="value" styleClass="w-full" />
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات</label>
+    <textarea pTextarea [(ngModel)]="procedureForm.notes" rows="3" class="w-full"></textarea>
+  </div>
+</div>
+
+<ng-template pTemplate="footer">
+  <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="procedureDialog.set(false)"></button>
+  <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="procedureSaving()" (click)="saveProcedure()"></button>
+</ng-template>
+</p-dialog>

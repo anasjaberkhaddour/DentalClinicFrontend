@@ -1,0 +1,324 @@
+<div class="max-w-5xl mx-auto space-y-6">
+
+    @if (loading()) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-3">
+        <p-skeleton width="40%" height="2rem" />
+        <p-skeleton width="60%" height="1rem" />
+      </div>
+    }
+  
+    @else if (tc(); as c) {
+  
+      <!-- Header -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-md">
+              <i class="pi pi-briefcase text-white text-xl"></i>
+            </div>
+            <div>
+              <div class="font-mono text-xs text-slate-400">{{ c.caseNumber }}</div>
+              <h1 class="text-xl font-bold text-slate-800">{{ c.title || c.chiefComplaint || 'حالة علاجية' }}</h1>
+              <p class="text-sm text-slate-500 mt-0.5">
+                {{ c.patientName }} · {{ c.startDate | date:'dd/MM/yyyy' }}
+              </p>
+            </div>
+          </div>
+  
+          <div class="flex flex-wrap items-center gap-2">
+            <button pButton type="button" label="رجوع" icon="pi pi-arrow-right" severity="secondary" [outlined]="true" (click)="goBack()"></button>
+            @if (c.status === 1 || c.status === 4) {
+              <button pButton type="button" label="تعديل" icon="pi pi-pencil" (click)="openEdit()"></button>
+            }
+            <button pButton type="button" label="الحالة" icon="pi pi-flag" severity="info" [outlined]="true" (click)="openStatusDialog()"></button>
+            @if (c.status === 1 || c.status === 3 || c.status === 4) {
+              <button pButton type="button" icon="pi pi-trash" severity="danger" [outlined]="true" (click)="confirmDelete()"></button>
+            }
+          </div>
+        </div>
+  
+        <div class="mt-6 pt-6 border-t border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <div class="text-xs text-slate-500 mb-1">الحالة</div>
+            <span class="inline-flex text-xs px-3 py-1 rounded-full font-semibold" [class]="getStatusColor(c.status)">
+              {{ getStatusName(c.status) }}
+            </span>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 mb-1">تاريخ البدء</div>
+            <div class="font-semibold text-slate-800 text-sm">{{ c.startDate | date:'dd/MM/yyyy' }}</div>
+          </div>
+          @if (c.completedDate) {
+            <div>
+              <div class="text-xs text-slate-500 mb-1">تاريخ الإكمال</div>
+              <div class="font-semibold text-emerald-600 text-sm">{{ c.completedDate | date:'dd/MM/yyyy' }}</div>
+            </div>
+          }
+          @if (c.cancelledAt) {
+            <div>
+              <div class="text-xs text-slate-500 mb-1">تاريخ الإلغاء</div>
+              <div class="font-semibold text-red-600 text-sm">{{ c.cancelledAt | date:'dd/MM/yyyy' }}</div>
+            </div>
+          }
+        </div>
+      </div>
+  
+      <!-- Diagnoses + Teeth -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+          <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm">
+            <i class="pi pi-search text-primary-600"></i>
+            التشخيصات
+          </h3>
+          @if (c.diagnoses.length === 0) {
+            <p class="text-sm text-slate-400">لا توجد تشخيصات</p>
+          } @else {
+            <div class="flex flex-wrap gap-2">
+              @for (d of c.diagnoses; track d.id) {
+                <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary-50 text-primary-700 border border-primary-200 font-semibold text-sm">
+                  <i class="pi pi-check text-xs"></i>
+                  {{ d.diagnosisTypeNameAr }}
+                </span>
+              }
+            </div>
+          }
+        </div>
+  
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+          <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm">
+            <i class="pi pi-th-large text-primary-600"></i>
+            الأسنان المستهدفة
+          </h3>
+          @if (c.teeth.length === 0) {
+            <p class="text-sm text-slate-400">لا توجد أسنان محددة</p>
+          } @else {
+            <div class="flex flex-wrap gap-2">
+              @for (t of c.teeth; track t.patientToothId) {
+                <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary-50 border-2 border-primary-200 font-bold text-primary-700">
+                  {{ t.toothNumber }}
+                </span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+  
+      <!-- Clinical & Plan -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+          <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm">
+            <i class="pi pi-clipboard text-primary-600"></i>
+            الفحص السريري
+          </h3>
+          <p class="text-sm text-slate-600 whitespace-pre-line">{{ c.clinicalFindings || '—' }}</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+          <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm">
+            <i class="pi pi-list-check text-primary-600"></i>
+            خطة العلاج
+          </h3>
+          <p class="text-sm text-slate-600 whitespace-pre-line">{{ c.treatmentPlanSummary || '—' }}</p>
+        </div>
+      </div>
+  
+      @if (c.notes) {
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+          <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm">
+            <i class="pi pi-file text-primary-600"></i>
+            ملاحظات
+          </h3>
+          <p class="text-sm text-slate-600 whitespace-pre-line">{{ c.notes }}</p>
+        </div>
+      }
+  
+      @if (c.cancellationReason) {
+        <div class="bg-red-50 rounded-2xl border border-red-100 p-5">
+          <h3 class="font-bold text-red-700 mb-2 flex items-center gap-2 text-sm">
+            <i class="pi pi-times-circle"></i>
+            سبب الإلغاء
+          </h3>
+          <p class="text-sm text-red-700">{{ c.cancellationReason }}</p>
+        </div>
+      }
+  
+      <!-- Visits -->
+          <!-- Visits -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+            <i class="pi pi-file-edit text-primary-600"></i>
+            الجلسات
+            <span class="text-xs px-2.5 py-1 rounded-full bg-primary-100 text-primary-700 font-bold">
+              {{ c.visits?.length ?? 0 }}
+            </span>
+          </h3>
+          @if (c.status === 1 || c.status === 4) {
+            <button pButton type="button" label="جلسة جديدة" icon="pi pi-plus" size="small" (click)="addVisit()"></button>
+          }
+        </div>
+  
+        @if (!c.visits || c.visits.length === 0) {
+          <div class="p-8 text-center bg-slate-50 rounded-xl">
+            <i class="pi pi-file-edit text-slate-300 text-2xl mb-2 block"></i>
+            <p class="text-sm text-slate-400">لا توجد جلسات لهذه الحالة بعد</p>
+          </div>
+        } @else {
+          <div class="space-y-2">
+            @for (visit of sortedVisitsDesc(c.visits); track visit.id) {
+              <div
+                class="flex items-center justify-between p-4 rounded-xl bg-white border border-slate-200 hover:border-primary-300 hover:shadow-sm cursor-pointer transition-all"
+                [routerLink]="['/patients', patientId, 'visits', visit.id]">
+                <div class="flex items-center gap-4 flex-1 min-w-0">
+                  <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center flex-shrink-0">
+                    <span class="font-bold text-primary-700 text-lg">{{ visit.visitNumber }}</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="font-bold text-slate-800">الجلسة {{ visit.visitNumber }}</span>
+                      <span class="text-xs text-slate-400">·</span>
+                      <span class="text-xs text-slate-500">{{ visit.visitDate | date:'dd/MM/yyyy - HH:mm' }}</span>
+                    </div>
+                    @if (visit.summary) {
+                      <div class="text-sm text-slate-600 truncate">{{ visit.summary }}</div>
+                    } @else {
+                      <div class="text-xs text-slate-400 italic">لا توجد تفاصيل مسجّلة</div>
+                    }
+                  </div>
+                </div>
+                <i class="pi pi-arrow-left text-slate-400 flex-shrink-0"></i>
+              </div>
+            }
+          </div>
+        }
+      </div>
+  
+    }
+  </div>
+  
+  <!-- Edit dialog -->
+  <p-dialog
+    [visible]="editDialog()"
+    (visibleChange)="editDialog.set($event)"
+    header="تعديل الحالة"
+    [modal]="true"
+    [style]="{ width: '600px' }"
+    appendTo="body">
+  
+    <div class="space-y-4 py-2">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">التشخيصات</label>
+        <p-multiselect
+          [(ngModel)]="editForm.diagnosisTypeIds"
+          [options]="diagnosisOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [filter]="true"
+          display="chip"
+          styleClass="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">الأسنان</label>
+        <p-multiselect
+          [(ngModel)]="editForm.patientToothIds"
+          [options]="toothOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [filter]="true"
+          display="chip"
+          styleClass="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">عنوان الحالة</label>
+        <input pInputText [(ngModel)]="editForm.title" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">الشكوى</label>
+        <textarea pTextarea [(ngModel)]="editForm.chiefComplaint" rows="2" class="w-full"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">الفحص السريري</label>
+        <textarea pTextarea [(ngModel)]="editForm.clinicalFindings" rows="2" class="w-full"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">خطة العلاج</label>
+        <textarea pTextarea [(ngModel)]="editForm.treatmentPlanSummary" rows="2" class="w-full"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات</label>
+        <textarea pTextarea [(ngModel)]="editForm.notes" rows="2" class="w-full"></textarea>
+      </div>
+    </div>
+  
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="editDialog.set(false)"></button>
+      <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="editSaving()" (click)="saveEdit()"></button>
+    </ng-template>
+  </p-dialog>
+  
+  <!-- Status dialog -->
+  <!-- Status dialog -->
+<p-dialog
+[visible]="statusDialog()"
+(visibleChange)="statusDialog.set($event)"
+header="تغيير حالة الحالة العلاجية"
+[modal]="true"
+[style]="{ width: '520px' }"
+appendTo="body">
+
+<div class="space-y-3 py-2">
+  @for (opt of TreatmentCaseStatusOptions; track opt.value) {
+    <button
+      type="button"
+      class="w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-right"
+      [class.border-primary-500]="statusForm.status === opt.value"
+      [class.bg-primary-50]="statusForm.status === opt.value"
+      [class.border-slate-200]="statusForm.status !== opt.value"
+      [class.hover:border-primary-300]="statusForm.status !== opt.value"
+      (click)="statusForm.status = opt.value">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center"
+          [class.bg-emerald-100]="opt.value === 1"
+          [class.bg-blue-100]="opt.value === 2"
+          [class.bg-red-100]="opt.value === 3"
+          [class.bg-amber-100]="opt.value === 4">
+          <i class="pi text-lg"
+            [class.pi-play-circle]="opt.value === 1"
+            [class.text-emerald-600]="opt.value === 1"
+            [class.pi-check-circle]="opt.value === 2"
+            [class.text-blue-600]="opt.value === 2"
+            [class.pi-times-circle]="opt.value === 3"
+            [class.text-red-600]="opt.value === 3"
+            [class.pi-pause-circle]="opt.value === 4"
+            [class.text-amber-600]="opt.value === 4">
+          </i>
+        </div>
+        <div>
+          <div class="font-bold text-slate-800">{{ opt.label }}</div>
+          @switch (opt.value) {
+            @case (1) { <div class="text-xs text-slate-500">الحالة قيد العلاج</div> }
+            @case (2) { <div class="text-xs text-slate-500">تم إكمال كل العلاج</div> }
+            @case (3) { <div class="text-xs text-slate-500">إيقاف الحالة نهائياً</div> }
+            @case (4) { <div class="text-xs text-slate-500">إيقاف مؤقت (للاحقاً)</div> }
+          }
+        </div>
+      </div>
+      @if (statusForm.status === opt.value) {
+        <i class="pi pi-check-circle text-primary-600 text-xl"></i>
+      }
+    </button>
+  }
+
+  @if (statusForm.status === 3) {
+    <div class="mt-3">
+      <label class="block text-sm font-semibold text-slate-700 mb-2">سبب الإلغاء</label>
+      <textarea pTextarea [(ngModel)]="statusForm.cancellationReason" rows="2" class="w-full"></textarea>
+    </div>
+  }
+</div>
+
+<ng-template pTemplate="footer">
+  <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="statusDialog.set(false)"></button>
+  <button pButton type="button" label="تأكيد التغيير" icon="pi pi-check" [loading]="statusSaving()" (click)="saveStatus()"></button>
+</ng-template>
+</p-dialog>

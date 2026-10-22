@@ -1,0 +1,188 @@
+<div class="space-y-6">
+  @if (loading()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+          <p-skeleton height="4rem" />
+        </div>
+      }
+    </div>
+  }
+
+  @else {
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      @if (canSeeAppointments) {
+        <a routerLink="/appointments" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 hover:shadow-lg hover:border-primary-300 transition-all cursor-pointer">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="text-xs text-slate-500 mb-1">مواعيد اليوم</div>
+              <div class="text-3xl font-bold text-slate-800">{{ todayAppointments() }}</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
+              <i class="pi pi-calendar text-blue-600 text-xl"></i>
+            </div>
+          </div>
+        </a>
+      }
+
+      @if (canSeePatients) {
+        <a routerLink="/patients" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 hover:shadow-lg hover:border-primary-300 transition-all cursor-pointer">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="text-xs text-slate-500 mb-1">إجمالي المرضى</div>
+              <div class="text-3xl font-bold text-slate-800">{{ totalPatients() }}</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
+              <i class="pi pi-users text-emerald-600 text-xl"></i>
+            </div>
+          </div>
+        </a>
+      }
+
+      @if (canSeeInvoices) {
+        <a routerLink="/invoices" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 hover:shadow-lg hover:border-primary-300 transition-all cursor-pointer">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="text-xs text-slate-500 mb-1">فواتير اليوم</div>
+              <div class="text-3xl font-bold text-slate-800">{{ todayInvoices() }}</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center">
+              <i class="pi pi-receipt text-purple-600 text-xl"></i>
+            </div>
+          </div>
+        </a>
+
+        <a routerLink="/invoices" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 hover:shadow-lg hover:border-primary-300 transition-all cursor-pointer">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="text-xs text-slate-500 mb-1">إيرادات اليوم</div>
+              <div class="text-3xl font-bold text-slate-800">{{ todayRevenue() | number:'1.0-0' }}</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+              <i class="pi pi-wallet text-amber-600 text-xl"></i>
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <div class="lg:col-span-1 space-y-4">
+        <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+          <i class="pi pi-exclamation-triangle text-amber-500"></i>
+          تنبيهات
+        </h2>
+
+        @if (canSeeInventory) {
+          <a routerLink="/inventory" class="block bg-white rounded-2xl shadow-sm border border-slate-200 p-4 hover:shadow-lg hover:border-amber-300 transition-all">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+                <i class="pi pi-box text-red-600"></i>
+              </div>
+              <div class="flex-1">
+                <div class="text-sm font-semibold text-slate-700">أصناف ناقصة</div>
+                <div class="text-xs text-slate-500">{{ lowStockCount() }} صنف تحت الحد الأدنى</div>
+              </div>
+              <i class="pi pi-arrow-left text-slate-400 text-sm"></i>
+            </div>
+          </a>
+
+          <a routerLink="/inventory" class="block bg-white rounded-2xl shadow-sm border border-slate-200 p-4 hover:shadow-lg hover:border-amber-300 transition-all">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+                <i class="pi pi-clock text-orange-600"></i>
+              </div>
+              <div class="flex-1">
+                <div class="text-sm font-semibold text-slate-700">دفعات قاربت الانتهاء</div>
+                <div class="text-xs text-slate-500">{{ expiringBatchesCount() }} صنف خلال 30 يوم</div>
+              </div>
+              <i class="pi pi-arrow-left text-slate-400 text-sm"></i>
+            </div>
+          </a>
+        }
+
+        @if (canSeeInvoices) {
+          <a routerLink="/invoices" class="block bg-white rounded-2xl shadow-sm border border-slate-200 p-4 hover:shadow-lg hover:border-amber-300 transition-all">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                <i class="pi pi-dollar text-amber-600"></i>
+              </div>
+              <div class="flex-1">
+                <div class="text-sm font-semibold text-slate-700">فواتير غير مسددة</div>
+                <div class="text-xs text-slate-500">{{ unpaidInvoicesCount() }} فاتورة · {{ unpaidInvoicesTotal() | number:'1.0-0' }}</div>
+              </div>
+              <i class="pi pi-arrow-left text-slate-400 text-sm"></i>
+            </div>
+          </a>
+        }
+      </div>
+
+      <div class="lg:col-span-2 space-y-6">
+
+        @if (canSeeAppointments && recentAppointments().length > 0) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+                <i class="pi pi-clock text-primary-600"></i>
+                المواعيد القادمة
+              </h2>
+              <a routerLink="/appointments" class="text-sm text-primary-600 hover:underline">عرض الكل</a>
+            </div>
+            <div class="space-y-2">
+              @for (a of recentAppointments(); track a.id) {
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <div class="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0">
+                    <i class="pi pi-calendar text-primary-600"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-slate-800 text-sm truncate">{{ a.patientName }}</div>
+                    <div class="text-xs text-slate-500">{{ a.scheduledAt | date:'dd/MM/yyyy - HH:mm' }}</div>
+                  </div>
+                  <div class="text-xs text-slate-400">{{ a.durationMinutes }} د</div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (canSeePatients && recentPatients().length > 0) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+                <i class="pi pi-user-plus text-primary-600"></i>
+                آخر المرضى
+              </h2>
+              <a routerLink="/patients" class="text-sm text-primary-600 hover:underline">عرض الكل</a>
+            </div>
+            <div class="space-y-2">
+              @for (p of recentPatients(); track p.id) {
+                <a [routerLink]="['/patients', p.id]" class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors">
+                  <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <i class="pi pi-user text-emerald-600"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-slate-800 text-sm truncate">{{ p.firstName }} {{ p.lastName }}</div>
+                    <div class="text-xs text-slate-500">{{ p.primaryPhone || '—' }}</div>
+                  </div>
+                  <div class="text-xs text-slate-400">{{ p.registrationDate | date:'dd/MM/yyyy' }}</div>
+                </a>
+              }
+            </div>
+          </div>
+        }
+
+        @if (!canSeeAppointments && !canSeePatients) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
+            <i class="pi pi-info-circle text-slate-300 text-4xl mb-3 block"></i>
+            <h3 class="text-lg font-semibold text-slate-600 mb-1">مرحباً</h3>
+            <p class="text-sm text-slate-400">لا توجد بيانات لعرضها حالياً بناءً على صلاحياتك.</p>
+          </div>
+        }
+
+      </div>
+    </div>
+  }
+</div>

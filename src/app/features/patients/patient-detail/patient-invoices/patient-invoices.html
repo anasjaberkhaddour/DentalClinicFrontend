@@ -1,0 +1,129 @@
+<div class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <h3 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+        <i class="pi pi-receipt text-primary-600"></i>
+        الفواتير
+      </h3>
+  
+    <button
+      pButton
+      type="button"
+      label="فاتورة جديدة"
+      icon="pi pi-plus"
+      [routerLink]="['/patients', patientId, 'invoices', 'create']">
+    </button>
+    </div>
+  
+    <!-- Loading -->
+    @if (loading()) {
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        @for (i of [1,2,3]; track i) {
+          <p-skeleton height="6rem" />
+        }
+      </div>
+    }
+  
+    @else {
+  
+      <!-- Summary -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+              <i class="pi pi-receipt text-blue-600"></i>
+            </div>
+            <span class="text-sm text-slate-500">إجمالي الفواتير</span>
+          </div>
+          <div class="text-2xl font-bold text-slate-800">{{ totalBilled() | number:'1.0-0' }}</div>
+        </div>
+  
+        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+              <i class="pi pi-check-circle text-emerald-600"></i>
+            </div>
+            <span class="text-sm text-slate-500">المدفوع</span>
+          </div>
+          <div class="text-2xl font-bold text-emerald-600">{{ totalPaid() | number:'1.0-0' }}</div>
+        </div>
+  
+        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+              <i class="pi pi-exclamation-circle text-red-600"></i>
+            </div>
+            <span class="text-sm text-slate-500">المتبقي</span>
+          </div>
+          <div class="text-2xl font-bold" [class.text-red-600]="totalRemaining() > 0" [class.text-slate-400]="totalRemaining() === 0">
+            {{ totalRemaining() | number:'1.0-0' }}
+          </div>
+        </div>
+      </div>
+  
+      <!-- Invoices list -->
+      @if (invoices().length === 0) {
+        <div class="p-12 text-center bg-slate-50 rounded-xl border border-slate-200">
+          <i class="pi pi-receipt text-slate-300 text-3xl mb-3 block"></i>
+          <h4 class="font-semibold text-slate-600 mb-1">لا توجد فواتير</h4>
+          <p class="text-sm text-slate-400">لم يصدر أي فاتورة لهذا المريض بعد</p>
+        </div>
+      } @else {
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-slate-50 border-b border-slate-200">
+              <tr class="text-right text-sm font-semibold text-slate-600">
+                <th class="px-4 py-3">رقم الفاتورة</th>
+                <th class="px-4 py-3">التاريخ</th>
+                <th class="px-4 py-3">الإجمالي</th>
+                <th class="px-4 py-3">المدفوع</th>
+                <th class="px-4 py-3">المتبقي</th>
+                <th class="px-4 py-3">الحالة</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (invoice of invoices(); track invoice.id) {
+                <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"  [routerLink]="['/patients', patientId, 'invoices', invoice.id]">
+                  <td class="px-4 py-3 font-mono text-sm text-slate-700">{{ invoice.invoiceNumber }}</td>
+                  <td class="px-4 py-3 text-slate-600 text-sm">{{ invoice.invoiceDate | date:'dd/MM/yyyy' }}</td>
+                  <td class="px-4 py-3 text-slate-700 font-semibold">
+                    {{ invoice.totalAmount | number:'1.0-0' }} {{ invoice.currencyCode }}
+                  </td>
+                  <td class="px-4 py-3 text-emerald-600 font-semibold">
+                    {{ invoice.paidAmount | number:'1.0-0' }}
+                  </td>
+                  <td class="px-4 py-3 font-semibold" [class.text-red-600]="invoice.remainingAmount > 0" [class.text-slate-400]="invoice.remainingAmount === 0">
+                    {{ invoice.remainingAmount | number:'1.0-0' }}
+                  </td>
+                  <td class="px-4 py-3">
+                    @switch (invoice.status) {
+                      @case (1) {
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">{{ getStatusName(invoice.status) }}</span>
+                      }
+                      @case (2) {
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">{{ getStatusName(invoice.status) }}</span>
+                      }
+                      @case (3) {
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold">{{ getStatusName(invoice.status) }}</span>
+                      }
+                      @case (4) {
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold">{{ getStatusName(invoice.status) }}</span>
+                      }
+                      @case (6) {
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold">{{ getStatusName(invoice.status) }}</span>
+                      }
+                      @default {
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">{{ getStatusName(invoice.status) }}</span>
+                      }
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+  
+    }
+  </div>

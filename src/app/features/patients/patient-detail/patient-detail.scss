@@ -1,0 +1,11 @@
+:host {
+    display: block;
+  }
+  
+  ::ng-deep .p-tablist {
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+  
+  ::ng-deep .p-tabpanel {
+    padding: 1.5rem !important;
+  }

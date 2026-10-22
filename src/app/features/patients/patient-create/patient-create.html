@@ -1,0 +1,177 @@
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">إضافة مريض جديد</h1>
+        <p class="text-slate-500 text-sm mt-1">تسجيل مريض جديد في العيادة</p>
+      </div>
+      <button pButton type="button" label="إلغاء" icon="pi pi-times" severity="secondary" [outlined]="true" (click)="cancel()"></button>
+    </div>
+  
+    <!-- Basic info -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h2 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+        <i class="pi pi-user text-primary-600"></i>
+        البيانات الشخصية
+      </h2>
+  
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">الاسم الأول <span class="text-red-500">*</span></label>
+          <input pInputText [(ngModel)]="form.firstName" class="w-full" placeholder="محمد" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">اسم الأب</label>
+          <input pInputText [(ngModel)]="form.fatherName" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">اسم الأم</label>
+          <input pInputText [(ngModel)]="form.motherName" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">الكنية <span class="text-red-500">*</span></label>
+          <input pInputText [(ngModel)]="form.lastName" class="w-full" placeholder="الأحمد" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">الرقم الوطني</label>
+          <input pInputText [(ngModel)]="form.nationalId" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">تاريخ الميلاد</label>
+          <p-datepicker [(ngModel)]="form.dateOfBirth" dateFormat="dd/mm/yy" [showIcon]="true" styleClass="w-full" appendTo="body" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">الجنس</label>
+          <p-select [(ngModel)]="form.gender" [options]="GenderOptions" optionLabel="label" optionValue="value" placeholder="اختر" styleClass="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">فصيلة الدم</label>
+          <p-select [(ngModel)]="form.bloodType" [options]="BloodTypeOptions" optionLabel="label" optionValue="value" placeholder="اختر" styleClass="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">العيادة <span class="text-red-500">*</span></label>
+          <p-select [(ngModel)]="form.registrationClinicId" [options]="clinics()" optionLabel="label" optionValue="value" placeholder="اختر" styleClass="w-full" />
+        </div>
+      </div>
+    </div>
+  
+    <!-- Address -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h2 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+        <i class="pi pi-map-marker text-primary-600"></i>
+        العنوان
+      </h2>
+  
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="md:col-span-3">
+          <label class="block text-sm font-semibold text-slate-700 mb-2">العنوان</label>
+          <input pInputText [(ngModel)]="form.address" class="w-full" placeholder="الشارع، الحي، رقم المبنى..." />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">المدينة</label>
+          <input pInputText [(ngModel)]="form.city" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">البلد</label>
+          <input pInputText [(ngModel)]="form.country" class="w-full" />
+        </div>
+      </div>
+    </div>
+  
+    <!-- Contacts -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+        <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+          <i class="pi pi-phone text-primary-600"></i>
+          جهات الاتصال
+        </h2>
+        <button pButton type="button" label="إضافة" icon="pi pi-plus" size="small" (click)="addContact()"></button>
+      </div>
+  
+      @if (form.contacts.length === 0) {
+        <div class="text-center py-6 bg-slate-50 rounded-xl border border-slate-200">
+          <i class="pi pi-phone text-slate-300 text-2xl mb-2 block"></i>
+          <p class="text-sm text-slate-400">لم تتم إضافة جهات اتصال بعد</p>
+        </div>
+      } @else {
+        <div class="space-y-3">
+          @for (contact of form.contacts; track $index; let i = $index) {
+            <div class="grid grid-cols-12 gap-2 items-end p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="col-span-12 md:col-span-3">
+                <label class="block text-xs text-slate-500 mb-1">النوع</label>
+                <p-select
+                  [(ngModel)]="contact.type"
+                  [options]="ContactTypeOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  styleClass="w-full" />
+              </div>
+              <div class="col-span-12 md:col-span-4">
+                <label class="block text-xs text-slate-500 mb-1">القيمة</label>
+                <input pInputText [(ngModel)]="contact.value" class="w-full" dir="ltr" placeholder="09xxxxxxxx" />
+              </div>
+              <div class="col-span-12 md:col-span-3">
+                <label class="block text-xs text-slate-500 mb-1">التسمية</label>
+                <input pInputText [(ngModel)]="contact.label" class="w-full" placeholder="شخصي، عمل..." />
+              </div>
+              <div class="col-span-6 md:col-span-1 flex justify-center pb-1">
+                <button
+                  type="button"
+                  pButton
+                  icon="pi pi-star"
+                  [severity]="contact.isPrimary ? 'warn' : 'secondary'"
+                  [text]="!contact.isPrimary"
+                  [rounded]="true"
+                  size="small"
+                  pTooltip="رئيسي"
+                  (click)="setPrimaryContact(i)">
+                </button>
+              </div>
+              <div class="col-span-6 md:col-span-1 flex justify-center pb-1">
+                <button
+                  type="button"
+                  pButton
+                  icon="pi pi-trash"
+                  severity="danger"
+                  [text]="true"
+                  [rounded]="true"
+                  size="small"
+                  (click)="removeContact(i)">
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  
+    <!-- Notes + Emergency -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h2 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+        <i class="pi pi-info-circle text-primary-600"></i>
+        ملاحظات
+      </h2>
+  
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات</label>
+          <textarea pTextarea [(ngModel)]="form.notes" rows="3" class="w-full"></textarea>
+        </div>
+  
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-red-50 border border-red-100">
+          <p-toggleswitch [(ngModel)]="form.isEmergency" />
+          <div>
+            <div class="font-semibold text-red-700 text-sm">حالة طارئة</div>
+            <div class="text-xs text-red-600">تفعيل هذا الخيار يُظهر تنبيهاً أحمر على بطاقة المريض</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Actions -->
+    <div class="sticky bottom-4 bg-white rounded-2xl shadow-lg border border-slate-200 p-4 flex items-center justify-end gap-2">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="cancel()"></button>
+      <button pButton type="button" label="حفظ المريض" icon="pi pi-check" [loading]="saving()" (click)="save()"></button>
+    </div>
+  </div>

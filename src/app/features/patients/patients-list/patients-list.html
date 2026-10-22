@@ -1,0 +1,271 @@
+<div class="space-y-6">
+
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">المرضى</h1>
+      <p class="text-slate-500 text-sm mt-1">إدارة ملفات المرضى وعرض بياناتهم</p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button
+        pButton
+        type="button"
+        [icon]="viewMode() === 'grid' ? 'pi pi-list' : 'pi pi-th-large'"
+        class="p-button-outlined p-button-rounded"
+        (click)="toggleView()"
+        [pTooltip]="viewMode() === 'grid' ? 'عرض كقائمة' : 'عرض كبطاقات'">
+      </button>
+      <button pButton label="إضافة مريض" icon="pi pi-plus" (click)="createPatient()"></button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="md:col-span-2">
+        <input
+          pInputText
+          [(ngModel)]="filter.search"
+          (keyup.enter)="onSearch()"
+          placeholder="ابحث بالاسم أو الرقم الوطني أو رقم الملف..."
+          class="w-full !py-2.5 !px-4 !rounded-xl" />
+      </div>
+      <p-select
+        [(ngModel)]="filter.isEmergency"
+        [options]="emergencyOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="حالة الطوارئ"
+        styleClass="w-full"
+        (onChange)="onSearch()" />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      @for (i of [1,2,3,4,5,6,7,8]; track i) {
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3">
+          <p-skeleton shape="circle" size="4rem" />
+          <p-skeleton width="80%" height="1.25rem" />
+          <p-skeleton width="60%" height="1rem" />
+        </div>
+      }
+    </div>
+  }
+
+  @else if (patients().length === 0) {
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-16 text-center">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-100 mb-4">
+        <i class="pi pi-users text-slate-400 text-2xl"></i>
+      </div>
+      <h3 class="text-lg font-semibold text-slate-700 mb-2">لا يوجد مرضى</h3>
+      <p class="text-slate-500 mb-6">ابدأ بإضافة أول مريض إلى العيادة</p>
+      <button pButton label="إضافة مريض" icon="pi pi-plus" (click)="createPatient()"></button>
+    </div>
+  }
+
+  @else if (viewMode() === 'grid') {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      @for (patient of patients(); track patient.id) {
+        <div
+          class="group bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl hover:border-primary-300 transition-all cursor-pointer relative"
+          (click)="openPatient(patient.id)">
+
+          @if (patient.isEmergency || patient.hasCriticalAlerts) {
+            <div class="absolute top-3 left-3 flex flex-col gap-1 z-10">
+              @if (patient.isEmergency) {
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-xs font-semibold shadow">
+                  <i class="pi pi-exclamation-triangle text-[10px]"></i>
+                  طارئ
+                </span>
+              }
+              @if (patient.hasCriticalAlerts) {
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500 text-white text-xs font-semibold shadow">
+                  <i class="pi pi-heart-fill text-[10px]"></i>
+                  تنبيه طبي
+                </span>
+              }
+            </div>
+          }
+
+          <div class="h-20 bg-gradient-to-br from-primary-500 to-primary-700 relative">
+            <div class="absolute -bottom-10 right-5">
+              @if (patient.photoUrl) {
+                <img
+                  [src]="patient.photoUrl"
+                  alt="photo"
+                  class="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-md" />
+              } @else {
+                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center border-4 border-white shadow-md">
+                  <iconify-icon
+                    [icon]="getAvatarIcon(patient.gender, patient.dateOfBirth)"
+                    class="text-primary-600"
+                    style="font-size: 2.5rem;">
+                  </iconify-icon>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="pt-12 px-5 pb-5">
+            <h3 class="font-bold text-slate-800 text-lg truncate">
+              {{ patient.firstName }} {{ patient.lastName }}
+            </h3>
+            <p class="text-xs text-slate-400 font-mono mb-1">#{{ patient.fileNumber }}</p>
+            <p class="text-sm text-slate-500 mb-4">
+              {{ calculateAge(patient.dateOfBirth) }}
+            </p>
+
+            <div class="space-y-2 text-sm">
+              <div class="flex items-center gap-2 text-slate-600">
+                <i class="pi pi-phone text-slate-400 text-xs"></i>
+                @if (patient.primaryPhone) {
+                  <span dir="ltr" class="truncate">{{ patient.primaryPhone }}</span>
+                } @else {
+                  <span class="text-slate-400">—</span>
+                }
+              </div>
+              <div class="flex items-center gap-2 text-slate-600">
+                <i class="pi pi-calendar text-slate-400 text-xs"></i>
+                <span>
+                  آخر زيارة:
+                  @if (patient.lastVisitDate) {
+                    {{ patient.lastVisitDate | date:'dd/MM/yyyy' }}
+                  } @else {
+                    <span class="text-slate-400">لا يوجد</span>
+                  }
+                </span>
+              </div>
+            </div>
+
+            <div
+              class="mt-3 p-2 rounded-lg border flex items-center justify-between"
+              [class.bg-red-50]="patient.outstandingBalance > 0"
+              [class.border-red-100]="patient.outstandingBalance > 0"
+              [class.bg-emerald-50]="patient.outstandingBalance === 0 && patient.hasInvoices"
+              [class.border-emerald-100]="patient.outstandingBalance === 0 && patient.hasInvoices"
+              [class.bg-slate-50]="!patient.hasInvoices"
+              [class.border-slate-200]="!patient.hasInvoices">
+              <span
+                class="text-xs font-medium"
+                [class.text-red-600]="patient.outstandingBalance > 0"
+                [class.text-emerald-600]="patient.outstandingBalance === 0 && patient.hasInvoices"
+                [class.text-slate-500]="!patient.hasInvoices">
+                @if (patient.outstandingBalance > 0) { رصيد متبقٍ }
+                @else if (patient.hasInvoices) { الحساب مسدّد }
+                @else { لا يوجد حساب }
+              </span>
+              <span
+                class="text-sm font-bold"
+                [class.text-red-700]="patient.outstandingBalance > 0"
+                [class.text-emerald-700]="patient.outstandingBalance === 0 && patient.hasInvoices"
+                [class.text-slate-500]="!patient.hasInvoices">
+                @if (patient.hasInvoices) {
+                  {{ patient.outstandingBalance | number:'1.0-0' }}
+                } @else {
+                  —
+                }
+              </span>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs text-slate-400">
+                مسجّل {{ patient.registrationDate | date:'dd/MM/yyyy' }}
+              </span>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-arrow-left"
+                class="p-button-text p-button-rounded p-button-sm !text-primary-600"
+                (click)="openPatient(patient.id); $event.stopPropagation()">
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @else {
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr class="text-right text-sm font-semibold text-slate-600">
+            <th class="px-4 py-3">المريض</th>
+            <th class="px-4 py-3">رقم الملف</th>
+            <th class="px-4 py-3">الهاتف</th>
+            <th class="px-4 py-3">العمر</th>
+            <th class="px-4 py-3">آخر زيارة</th>
+            <th class="px-4 py-3">الرصيد</th>
+            <th class="px-4 py-3">الحالة</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (patient of patients(); track patient.id) {
+            <tr class="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors" (click)="openPatient(patient.id)">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-3">
+                  @if (patient.photoUrl) {
+                    <img [src]="patient.photoUrl" class="w-10 h-10 rounded-full object-cover" />
+                  } @else {
+                    <div class="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
+                      <iconify-icon
+                        [icon]="getAvatarIcon(patient.gender, patient.dateOfBirth)"
+                        class="text-primary-600"
+                        style="font-size: 1.5rem;">
+                      </iconify-icon>
+                    </div>
+                  }
+                  <div>
+                    <span class="font-semibold text-slate-700 block">{{ patient.firstName }} {{ patient.lastName }}</span>
+                    @if (patient.hasCriticalAlerts) {
+                      <span class="text-xs text-amber-600">
+                        <i class="pi pi-heart-fill text-[10px]"></i> تنبيه طبي
+                      </span>
+                    }
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-slate-600 font-mono">#{{ patient.fileNumber }}</td>
+              <td class="px-4 py-3 text-slate-600" dir="ltr">{{ patient.primaryPhone || '—' }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ calculateAge(patient.dateOfBirth) }}</td>
+              <td class="px-4 py-3 text-slate-600">
+                @if (patient.lastVisitDate) {
+                  {{ patient.lastVisitDate | date:'dd/MM/yyyy' }}
+                } @else {
+                  <span class="text-slate-400">—</span>
+                }
+              </td>
+              <td class="px-4 py-3">
+                @if (patient.outstandingBalance > 0) {
+                  <span class="text-red-600 font-semibold">{{ patient.outstandingBalance | number:'1.0-0' }}</span>
+                } @else if (patient.hasInvoices) {
+                  <span class="text-emerald-600">0</span>
+                } @else {
+                  <span class="text-slate-400">—</span>
+                }
+              </td>
+              <td class="px-4 py-3">
+                @if (patient.isEmergency) {
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-xs font-semibold">
+                    <i class="pi pi-exclamation-triangle text-[10px]"></i> طارئ
+                  </span>
+                } @else {
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-semibold">عادي</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (totalRecords() > 0) {
+    <p-paginator
+      [rows]="filter.pageSize!"
+      [totalRecords]="totalRecords()"
+      [rowsPerPageOptions]="[12, 20, 40, 80]"
+      (onPageChange)="onPageChange($event)"
+      styleClass="!bg-transparent !border-none" />
+  }
+</div>

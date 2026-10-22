@@ -1,0 +1,177 @@
+<div class="space-y-6">
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">كتالوج العلاجات</h1>
+        <p class="text-slate-500 text-sm mt-1">إدارة العلاجات والخدمات</p>
+      </div>
+      <button pButton type="button" label="إضافة علاج" icon="pi pi-plus" (click)="openCreate()"></button>
+    </div>
+  
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="md:col-span-2">
+          <input
+            pInputText
+            [(ngModel)]="filter.search"
+            (keyup.enter)="onSearch()"
+            placeholder="ابحث بالرمز أو الاسم..."
+            class="w-full !py-2.5 !px-4 !rounded-xl" />
+        </div>
+        <p-select
+          [(ngModel)]="filter.isActive"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="الحالة"
+          styleClass="w-full"
+          (onChange)="onSearch()" />
+      </div>
+    </div>
+  
+    @if (loading()) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-3">
+        <p-skeleton height="3rem" />
+        <p-skeleton height="3rem" />
+        <p-skeleton height="3rem" />
+      </div>
+    }
+  
+    @else if (treatments().length === 0) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-16 text-center">
+        <i class="pi pi-list text-slate-300 text-4xl mb-3 block"></i>
+        <h3 class="text-lg font-semibold text-slate-600 mb-1">لا توجد علاجات</h3>
+        <p class="text-sm text-slate-400 mb-6">ابدأ بإضافة أول علاج</p>
+        <button pButton type="button" label="إضافة علاج" icon="pi pi-plus" (click)="openCreate()"></button>
+      </div>
+    }
+  
+    @else {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr class="text-right text-sm font-semibold text-slate-600">
+              <th class="px-4 py-3">الرمز</th>
+              <th class="px-4 py-3">الاسم</th>
+              <th class="px-4 py-3">الفئة</th>
+              <th class="px-4 py-3">السعر</th>
+              <th class="px-4 py-3">المدة</th>
+              <th class="px-4 py-3">الحالة</th>
+              <th class="px-4 py-3 w-32">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of treatments(); track t.id) {
+              <tr class="border-b border-slate-100 hover:bg-slate-50">
+                <td class="px-4 py-3">
+                  <span class="font-mono font-semibold text-slate-700">{{ t.code }}</span>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="font-semibold text-slate-800">{{ t.nameAr }}</div>
+                  <div class="flex items-center gap-1 mt-1">
+                    @if (t.requiresTooth) {
+                      <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">سن</span>
+                    }
+                    @if (t.requiresSurface) {
+                      <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600">سطح</span>
+                    }
+                    @if (t.createsLabOrder) {
+                      <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600">مخبر</span>
+                    }
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-slate-600 text-sm">{{ t.categoryAr || '—' }}</td>
+                <td class="px-4 py-3">
+                  <span class="font-semibold text-slate-800">{{ t.estimatedPrice | number:'1.0-0' }}</span>
+                  @if (t.currencySymbol) {
+                    <span class="text-xs text-slate-500 mr-1">{{ t.currencySymbol }}</span>
+                  }
+                </td>
+                <td class="px-4 py-3 text-slate-600 text-sm">
+                  @if (t.estimatedDurationMinutes > 0) {
+                    {{ t.estimatedDurationMinutes }} د
+                  } @else {
+                    —
+                  }
+                </td>
+                <td class="px-4 py-3">
+                  @if (t.isActive) {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-semibold">نشط</span>
+                  } @else {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-semibold">معطّل</span>
+                  }
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-1">
+                    <button pButton type="button" icon="pi pi-pencil" [text]="true" [rounded]="true" size="small" (click)="openEdit(t)"></button>
+                    <button pButton type="button" icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" size="small" (click)="confirmDelete(t)"></button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+  
+      @if (totalRecords() > 0) {
+        <p-paginator
+          [rows]="filter.pageSize!"
+          [totalRecords]="totalRecords()"
+          [rowsPerPageOptions]="[20, 40, 80]"
+          (onPageChange)="onPageChange($event)"
+          styleClass="!bg-transparent !border-none" />
+      }
+    }
+  </div>
+  
+  <!-- Create dialog -->
+  <p-dialog [visible]="createDialog()" (visibleChange)="createDialog.set($event)" header="إضافة علاج" [modal]="true" [style]="{ width: '700px' }" appendTo="body">
+    <div class="space-y-4 py-2">
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">الرمز *</label><input pInputText [(ngModel)]="form.code" class="w-full" dir="ltr" /></div>
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">الاسم *</label><input pInputText [(ngModel)]="form.nameAr" class="w-full" /></div>
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">الفئة</label><input pInputText [(ngModel)]="form.categoryAr" class="w-full" /></div>
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">المدة (دقيقة)</label><p-inputnumber [(ngModel)]="form.estimatedDurationMinutes" [min]="0" styleClass="w-full" /></div>
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">السعر التقديري</label><p-inputnumber [(ngModel)]="form.estimatedPrice" [min]="0" [minFractionDigits]="2" styleClass="w-full" /></div>
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">العملة</label><p-select [(ngModel)]="form.currencyId" [options]="currencies()" optionLabel="label" optionValue="value" placeholder="اختر" [showClear]="true" styleClass="w-full" /></div>
+        <div class="col-span-2"><label class="block text-sm font-semibold text-slate-700 mb-2">الوصف</label><textarea pTextarea [(ngModel)]="form.descriptionAr" rows="2" class="w-full"></textarea></div>
+        <div class="col-span-2 grid grid-cols-3 gap-3">
+          <div class="flex items-center gap-2"><p-toggleswitch [(ngModel)]="form.requiresTooth" /><label class="text-sm font-semibold text-slate-700">يتطلب سن</label></div>
+          <div class="flex items-center gap-2"><p-toggleswitch [(ngModel)]="form.requiresSurface" /><label class="text-sm font-semibold text-slate-700">يتطلب سطح</label></div>
+          <div class="flex items-center gap-2"><p-toggleswitch [(ngModel)]="form.createsLabOrder" /><label class="text-sm font-semibold text-slate-700">يُنشئ طلب مخبر</label></div>
+        </div>
+        <div class="flex items-center gap-3"><p-toggleswitch [(ngModel)]="form.isActive" /><label class="text-sm font-semibold text-slate-700">نشط</label></div>
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">الترتيب</label><p-inputnumber [(ngModel)]="form.displayOrder" [min]="0" styleClass="w-full" /></div>
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="createDialog.set(false)"></button>
+      <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="saving()" (click)="saveCreate()"></button>
+    </ng-template>
+  </p-dialog>
+  
+  <!-- Edit dialog -->
+  <p-dialog [visible]="editDialog()" (visibleChange)="editDialog.set($event)" header="تعديل العلاج" [modal]="true" [style]="{ width: '700px' }" appendTo="body">
+    <div class="space-y-4 py-2">
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">الرمز</label><input pInputText [(ngModel)]="editForm.code" class="w-full" dir="ltr" disabled /></div>
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">الاسم *</label><input pInputText [(ngModel)]="editForm.nameAr" class="w-full" /></div>
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">الفئة</label><input pInputText [(ngModel)]="editForm.categoryAr" class="w-full" /></div>
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">المدة (دقيقة)</label><p-inputnumber [(ngModel)]="editForm.estimatedDurationMinutes" [min]="0" styleClass="w-full" /></div>
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">السعر التقديري</label><p-inputnumber [(ngModel)]="editForm.estimatedPrice" [min]="0" [minFractionDigits]="2" styleClass="w-full" /></div>
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">العملة</label><p-select [(ngModel)]="editForm.currencyId" [options]="currencies()" optionLabel="label" optionValue="value" placeholder="اختر" [showClear]="true" styleClass="w-full" /></div>
+        <div class="col-span-2"><label class="block text-sm font-semibold text-slate-700 mb-2">الوصف</label><textarea pTextarea [(ngModel)]="editForm.descriptionAr" rows="2" class="w-full"></textarea></div>
+        <div class="col-span-2 grid grid-cols-3 gap-3">
+          <div class="flex items-center gap-2"><p-toggleswitch [(ngModel)]="editForm.requiresTooth" /><label class="text-sm font-semibold text-slate-700">يتطلب سن</label></div>
+          <div class="flex items-center gap-2"><p-toggleswitch [(ngModel)]="editForm.requiresSurface" /><label class="text-sm font-semibold text-slate-700">يتطلب سطح</label></div>
+          <div class="flex items-center gap-2"><p-toggleswitch [(ngModel)]="editForm.createsLabOrder" /><label class="text-sm font-semibold text-slate-700">يُنشئ طلب مخبر</label></div>
+        </div>
+        <div class="flex items-center gap-3"><p-toggleswitch [(ngModel)]="editForm.isActive" /><label class="text-sm font-semibold text-slate-700">نشط</label></div>
+        <div><label class="block text-sm font-semibold text-slate-700 mb-2">الترتيب</label><p-inputnumber [(ngModel)]="editForm.displayOrder" [min]="0" styleClass="w-full" /></div>
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="editDialog.set(false)"></button>
+      <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="editSaving()" (click)="saveEdit()"></button>
+    </ng-template>
+  </p-dialog>
