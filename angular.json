@@ -67,10 +67,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "akh-dental-clinic:build:production"
+              "buildTarget": "DentalClinicApp:build:production"
             },
             "development": {
-              "buildTarget": "akh-dental-clinic:build:development"
+              "buildTarget": "DentalClinicApp:build:development"
             }
           },
           "defaultConfiguration": "development"

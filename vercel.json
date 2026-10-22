@@ -1,6 +1,6 @@
 {
     "buildCommand": "npm run build",
-    "outputDirectory": "dist/akh-dental-clinic/browser",
+    "outputDirectory": "dist/DentalClinicApp/browser",
     "rewrites": [
       {
         "source": "/(.*)",
