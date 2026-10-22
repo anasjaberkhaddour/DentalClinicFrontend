@@ -1,0 +1,10 @@
+{
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist/landing-page/browser",
+    "rewrites": [
+      {
+        "source": "/(.*)",
+        "destination": "/index.html"
+      }
+    ]
+  }
