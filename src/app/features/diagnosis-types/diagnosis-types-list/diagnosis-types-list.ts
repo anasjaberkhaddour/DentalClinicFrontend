@@ -1,0 +1,179 @@
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { SelectModule } from 'primeng/select';
+import { SkeletonModule } from 'primeng/skeleton';
+import { DialogModule } from 'primeng/dialog';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { TooltipModule } from 'primeng/tooltip';
+import { PaginatorModule } from 'primeng/paginator';
+import { MessageService, ConfirmationService } from 'primeng/api';
+import { DiagnosisTypeService } from '../../../core/services/diagnosis-type.service';
+import { DiagnosisType, DiagnosisTypeFilter } from '../../../core/models/diagnosis-type.model';
+
+@Component({
+  selector: 'app-diagnosis-types-list',
+  standalone: true,
+  imports: [
+    CommonModule, FormsModule, ButtonModule, InputTextModule, InputNumberModule,
+    SelectModule, SkeletonModule, DialogModule, ToggleSwitchModule, TooltipModule, PaginatorModule
+  ],
+  templateUrl: './diagnosis-types-list.html',
+  styleUrl: './diagnosis-types-list.scss'
+})
+export class DiagnosisTypesList implements OnInit {
+  private service = inject(DiagnosisTypeService);
+  private messageService = inject(MessageService);
+  private confirmationService = inject(ConfirmationService);
+
+  loading = signal(true);
+  items = signal<DiagnosisType[]>([]);
+  totalRecords = signal(0);
+
+  filter: DiagnosisTypeFilter = { page: 1, pageSize: 20, search: '', isActive: undefined };
+
+  statusOptions = [
+    { label: 'الكل', value: null },
+    { label: 'نشط', value: true },
+    { label: 'معطّل', value: false }
+  ];
+
+  createDialog = signal(false);
+  saving = signal(false);
+  form = { code: '', nameAr: '', categoryAr: '', isActive: true, displayOrder: 0 };
+
+  editDialog = signal(false);
+  editSaving = signal(false);
+  editingId = signal<string | null>(null);
+  editForm = { nameAr: '', categoryAr: '', isActive: true, displayOrder: 0 };
+
+  ngOnInit(): void {
+    this.load();
+  }
+
+  load(): void {
+    this.loading.set(true);
+    this.service.getAll(this.filter).subscribe({
+      next: (res) => {
+        this.items.set(res.value); // هنا نأخذ المصفوفة مباشرة
+        this.totalRecords.set(res.value.length);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.messageService.add({ severity: 'error', summary: 'خطأ', detail: 'تعذّر تحميل التشخيصات.' });
+      }
+    });
+  }
+
+  onSearch(): void {
+    this.filter.page = 1;
+    this.load();
+  }
+
+  onPageChange(event: any): void {
+    this.filter.page = event.page + 1;
+    this.filter.pageSize = event.rows;
+    this.load();
+  }
+
+  openCreate(): void {
+    this.form = { code: '', nameAr: '', categoryAr: '', isActive: true, displayOrder: 0 };
+    this.createDialog.set(true);
+  }
+
+  saveCreate(): void {
+    if (!this.form.code.trim() || !this.form.nameAr.trim()) {
+      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'الرمز والاسم مطلوبان.' });
+      return;
+    }
+
+    this.saving.set(true);
+    this.service.create(this.form).subscribe({
+      next: (res) => {
+        this.saving.set(false);
+        if (res.isSuccess) {
+          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم إنشاء التشخيص.' });
+          this.createDialog.set(false);
+          this.load();
+        }
+      },
+      error: (err) => {
+        this.saving.set(false);
+        this.messageService.add({
+          severity: 'error', summary: 'خطأ',
+          detail: err?.error?.error?.message ?? 'تعذّر إنشاء التشخيص.'
+        });
+      }
+    });
+  }
+
+  openEdit(item: DiagnosisType): void {
+    this.editingId.set(item.id);
+    this.editForm = {
+      nameAr: item.nameAr,
+      categoryAr: item.categoryAr ?? '',
+      isActive: item.isActive,
+      displayOrder: item.displayOrder
+    };
+    this.editDialog.set(true);
+  }
+
+  saveEdit(): void {
+    const id = this.editingId();
+    if (!id) return;
+    if (!this.editForm.nameAr.trim()) {
+      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'الاسم مطلوب.' });
+      return;
+    }
+
+    this.editSaving.set(true);
+    this.service.update(id, this.editForm).subscribe({
+      next: (res) => {
+        this.editSaving.set(false);
+        if (res.isSuccess) {
+          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم حفظ التعديلات.' });
+          this.editDialog.set(false);
+          this.load();
+        }
+      },
+      error: (err) => {
+        this.editSaving.set(false);
+        this.messageService.add({
+          severity: 'error', summary: 'خطأ',
+          detail: err?.error?.error?.message ?? 'تعذّر حفظ التعديلات.'
+        });
+      }
+    });
+  }
+
+  confirmDelete(item: DiagnosisType): void {
+    this.confirmationService.confirm({
+      message: `هل تريد حذف التشخيص "${item.nameAr}"؟`,
+      header: 'تأكيد الحذف',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'نعم، احذف',
+      rejectLabel: 'تراجع',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.service.delete(item.id).subscribe({
+          next: (res) => {
+            if (res.isSuccess) {
+              this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم حذف التشخيص.' });
+              this.load();
+            }
+          },
+          error: (err) => {
+            this.messageService.add({
+              severity: 'error', summary: 'خطأ',
+              detail: err?.error?.error?.message ?? 'تعذّر حذف التشخيص.'
+            });
+          }
+        });
+      }
+    });
+  }
+}

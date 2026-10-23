@@ -12,6 +12,8 @@ import { MessageService } from 'primeng/api';
 import { InvoiceService, CreateInvoiceRequest, CreateInvoiceItemRequest } from '../../../../core/services/invoice.service';
 import { ClinicService } from '../../../../core/services/clinic.service';
 import { CurrencyService } from '../../../../core/services/currency.service';
+import { TreatmentService } from '../../../../core/services/treatment.service';
+import { TreatmentListItem } from '../../../../core/models/treatment.model';
 
 @Component({
   selector: 'app-invoice-create',
@@ -29,6 +31,7 @@ export class InvoiceCreate implements OnInit {
   private invoiceService = inject(InvoiceService);
   private clinicService = inject(ClinicService);
   private currencyService = inject(CurrencyService);
+  private treatmentService = inject(TreatmentService);
   private messageService = inject(MessageService);
 
   patientId!: string;
@@ -36,8 +39,9 @@ export class InvoiceCreate implements OnInit {
 
   clinics = signal<{ label: string; value: string }[]>([]);
   currencies = signal<{ label: string; value: string }[]>([]);
+  treatments = signal<TreatmentListItem[]>([]);
 
-  items = signal<CreateInvoiceItemRequest[]>([]);
+  items = signal<(CreateInvoiceItemRequest & { treatmentId?: string })[]>([]);
 
   form: CreateInvoiceRequest = {
     patientId: '',
@@ -76,6 +80,7 @@ export class InvoiceCreate implements OnInit {
     this.addItem();
     this.loadClinics();
     this.loadCurrencies();
+    this.loadTreatments();
   }
 
   loadClinics(): void {
@@ -104,10 +109,37 @@ export class InvoiceCreate implements OnInit {
     });
   }
 
+  loadTreatments(): void {
+    this.treatmentService.getAll({ page: 1, pageSize: 200, isActive: true }).subscribe({
+      next: (response) => {
+        if (response.isSuccess) {
+          this.treatments.set(response.value.items);
+        }
+      }
+    });
+  }
+
+  onTreatmentSelect(index: number, treatmentId: string): void {
+    const treatment = this.treatments().find(t => t.id === treatmentId);
+    if (treatment) {
+      this.items.update(list => {
+        const newList = [...list];
+        newList[index] = {
+          ...newList[index],
+          treatmentId: treatment.id,
+          description: treatment.nameAr,
+          unitPrice: treatment.estimatedPrice
+        };
+        return newList;
+      });
+    }
+  }
+
   addItem(): void {
     this.items.update(list => [
       ...list,
       {
+        treatmentId: undefined,
         description: '',
         quantity: 1,
         unitPrice: 0,
@@ -130,7 +162,7 @@ export class InvoiceCreate implements OnInit {
       return;
     }
 
-    const cleanItems = this.items().filter(i => i.description.trim().length > 0 && i.unitPrice > 0);
+    const cleanItems = this.items().filter(i => i.description.trim().length > 0 && i.unitPrice >= 0);
 
     if (cleanItems.length === 0) {
       this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'أضف بنداً واحداً على الأقل.' });

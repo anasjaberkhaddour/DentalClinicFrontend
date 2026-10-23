@@ -45,7 +45,7 @@ export class ProcedureTypesList implements OnInit {
   items = signal<ProcedureTypeListItem[]>([]);
   totalRecords = signal(0);
 
-  filter: ProcedureTypeFilter = { page: 1, pageSize: 20, search: '', isActive: undefined, category: 'Diagnostic' };
+  filter: ProcedureTypeFilter = { page: 1, pageSize: 20, search: '', isActive: undefined, };//category: 'Diagnostic' };
 
   statusOptions = [
     { label: 'الكل', value: null },

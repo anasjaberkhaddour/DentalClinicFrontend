@@ -107,8 +107,8 @@ export class Login {
   private router = inject(Router);
   private messageService = inject(MessageService);
 
-  userName = 'admin';
-  password = 'Admin@123456';
+  userName = '';
+  password = '';
   loading = signal(false);
   errorMessage = signal<string | null>(null);
   currentYear = new Date().getFullYear();
