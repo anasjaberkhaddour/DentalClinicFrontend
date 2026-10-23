@@ -1,0 +1,43 @@
+<div class="space-y-6">
+
+    <div class="flex items-center justify-between print:hidden">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">إحصائيات التشخيصات</h1>
+        <p class="text-slate-500 text-sm mt-1">التوزيع التكراري لأنواع التشخيص في العيادة</p>
+      </div>
+      <button pButton type="button" label="رجوع" icon="pi pi-arrow-right" severity="secondary" [outlined]="true" (click)="goBack()"></button>
+    </div>
+  
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden pdf-container">
+      
+      <div class="bg-primary-700 text-white p-6">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 shadow-sm p-1">
+            <img src="assets/512X512.png" alt="Logo" class="w-full h-full object-contain" />
+          </div>
+          <div class="flex-1">
+            <h1 class="text-xl font-bold mb-1">التوزيع التكراري للتشخيصات</h1>
+            <div class="text-sm opacity-90">تاريخ التقرير: {{ reportDate() | date:'dd/MM/yyyy' }}</div>
+          </div>
+        </div>
+      </div>
+  
+      <div class="p-6">
+        @if (loadingStats()) {
+          <p-skeleton height="24rem" />
+        } @else {
+          <div class="h-[24rem] w-full">
+            <canvas baseChart
+              [data]="barChartData"
+              [options]="barChartOptions"
+              type="bar">
+            </canvas>
+          </div>
+        }
+      </div>
+    </div>
+  
+    <div class="flex justify-end gap-2 print:hidden">
+      <button pButton type="button" label="تصدير PDF" icon="pi pi-file-pdf" [disabled]="loadingStats()" (click)="exportPdf()"></button>
+    </div>
+  </div>

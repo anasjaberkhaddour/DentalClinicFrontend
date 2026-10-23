@@ -9,6 +9,8 @@ import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { routes } from './app.routes';
 import { ConfirmationService } from 'primeng/api';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
@@ -35,6 +37,7 @@ export const appConfig: ApplicationConfig = {
         dateFormat: 'dd/mm/yy'
       }
     }),
+    provideCharts(withDefaultRegisterables()),
     provideHttpClient(
       withInterceptors([authInterceptor, errorInterceptor])
     ),

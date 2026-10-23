@@ -78,7 +78,7 @@ export class Sidebar {
       label: 'التقارير',
       icon: 'pi-file-pdf',
       items: [
-        { label: 'التقارير الإدارية', icon: 'pi-file', route: '/reports/administrative', permission: 'patients.view' },
+        { label: 'التقارير الإدارية والطبية', icon: 'pi-file', route: '/reports/administrative', permission: 'patients.view' },
         { label: 'التقارير المالية', icon: 'pi-wallet', route: '/reports/financial', permission: 'invoices.view' },
       ]
     }

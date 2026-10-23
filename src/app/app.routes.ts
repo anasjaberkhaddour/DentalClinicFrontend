@@ -107,6 +107,8 @@ export const routes: Routes = [
       { path: 'reports/financial', loadComponent: () => import('./features/reports/reports-list/reports-list').then(m => m.ReportsList), data: { type: 'financial' } },
       { path: 'reports/treatment-plan', loadComponent: () => import('./features/reports/treatment-plan-report/treatment-plan-report').then(m => m.TreatmentPlanReportComponent) },
       { path: 'reports/financial-follow-up', loadComponent: () => import('./features/reports/financial-follow-up/financial-follow-up').then(m => m.FinancialFollowUpComponent) },
+      { path: 'reports/diagnosis-report', loadComponent: () => import('./features/reports/diagnosis-report/diagnosis-report').then(m => m.DiagnosisReportComponent) },
+      { path: 'reports/diagnosis-stats', loadComponent: () => import('./features/reports/diagnosis-stats/diagnosis-stats').then(m => m.DiagnosisStatsComponent) },
     ]
   },
 

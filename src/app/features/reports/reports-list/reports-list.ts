@@ -15,7 +15,9 @@ export class ReportsList implements OnInit {
   type: 'administrative' | 'financial' = 'administrative';
 
   administrativeReports = [
-    { title: 'بطاقة تشخيص وخطة علاج', description: 'تقرير تشخيصي مفصل لأحد الحالات العلاجية', icon: 'pi-file-edit', route: '/reports/treatment-plan' }
+    { title: 'بطاقة تشخيص وخطة علاج', description: 'تقرير تشخيصي مفصل لأحد الحالات العلاجية', icon: 'pi-file-edit', route: '/reports/treatment-plan' },
+    { title: 'تقرير الحالات حسب التشخيص', description: 'عرض المرضى والحالات المرتبطة بنوع تشخيص معين', icon: 'pi-search', route: '/reports/diagnosis-report' },
+    { title: 'إحصائيات التشخيصات', description: 'رسم بياني يوضح توزيع الحالات حسب نوع التشخيص', icon: 'pi-chart-bar', route: '/reports/diagnosis-stats' },
   ];
 
   financialReports = [
