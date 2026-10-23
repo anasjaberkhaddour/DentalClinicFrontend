@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -7,10 +7,17 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
-import { MultiSelectModule } from 'primeng/multiselect';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { RoleService } from '../../../core/services/role.service';
 import { PermissionService } from '../../../core/services/permission.service';
+
+interface PermissionGroup {
+  groupAr: string;
+  group: string;
+  permissions: { code: string; nameAr: string }[];
+}
 
 @Component({
   selector: 'app-role-detail',
@@ -18,7 +25,7 @@ import { PermissionService } from '../../../core/services/permission.service';
   imports: [
     CommonModule, FormsModule, RouterLink,
     ButtonModule, SkeletonModule, DialogModule, InputTextModule,
-    TextareaModule, MultiSelectModule
+    TextareaModule, ToggleSwitchModule, TooltipModule
   ],
   templateUrl: './role-detail.html',
   styleUrl: './role-detail.scss'
@@ -38,16 +45,32 @@ export class RoleDetail implements OnInit {
   // Edit dialog
   editDialog = signal(false);
   editSaving = signal(false);
-  editForm = {
-    name: '',
-    description: ''
-  };
+  editForm = { name: '', description: '' };
 
   // Permissions dialog
   permissionsDialog = signal(false);
   permissionsSaving = signal(false);
-  permissionOptions = signal<{ label: string; value: string }[]>([]);
+  
+  allPermissions = signal<any[]>([]);
   selectedPermissions = signal<string[]>([]);
+
+  // تجميع الصلاحيات حسب الـ Group
+  groupedPermissions = computed<PermissionGroup[]>(() => {
+    const perms = this.allPermissions();
+    const groupsMap = new Map<string, PermissionGroup>();
+
+    perms.forEach(p => {
+      const gName = p.group || 'Other';
+      const gNameAr = p.groupAr || 'أخرى';
+      
+      if (!groupsMap.has(gName)) {
+        groupsMap.set(gName, { group: gName, groupAr: gNameAr, permissions: [] });
+      }
+      groupsMap.get(gName)!.permissions.push({ code: p.code, nameAr: p.nameAr });
+    });
+
+    return Array.from(groupsMap.values());
+  });
 
   ngOnInit(): void {
     this.roleId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -73,13 +96,12 @@ export class RoleDetail implements OnInit {
     });
   }
 
+  // ============ Edit Role ============
+
   openEdit(): void {
     const r = this.role();
     if (!r) return;
-    this.editForm = {
-      name: r.name ?? '',
-      description: r.description ?? ''
-    };
+    this.editForm = { name: r.name ?? '', description: r.description ?? '' };
     this.editDialog.set(true);
   }
 
@@ -88,7 +110,6 @@ export class RoleDetail implements OnInit {
       this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اسم الدور مطلوب.' });
       return;
     }
-
     this.editSaving.set(true);
     this.roleService.update(this.roleId, this.editForm).subscribe({
       next: (res) => {
@@ -101,14 +122,12 @@ export class RoleDetail implements OnInit {
       },
       error: (err) => {
         this.editSaving.set(false);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'خطأ',
-          detail: err?.error?.error?.message ?? 'تعذّر حفظ التعديلات.'
-        });
+        this.messageService.add({ severity: 'error', summary: 'خطأ', detail: err?.error?.error?.message ?? 'تعذّر حفظ التعديلات.' });
       }
     });
   }
+
+  // ============ Manage Permissions ============
 
   openPermissionsDialog(): void {
     const r = this.role();
@@ -117,15 +136,53 @@ export class RoleDetail implements OnInit {
     this.permissionService.getAll().subscribe({
       next: (res) => {
         if (res.isSuccess) {
-          this.permissionOptions.set(
-            res.value.map((p: any) => ({ label: `${p.nameAr} (${p.code})`, value: p.code }))
-          );
+          this.allPermissions.set(res.value);
         }
       }
     });
 
     this.selectedPermissions.set([...(r.permissionCodes ?? [])]);
     this.permissionsDialog.set(true);
+  }
+
+  // دالة لمعرفة هل الصلاحية محددة
+  hasPermission(code: string): boolean {
+    return this.selectedPermissions().includes(code);
+  }
+
+  // دالة للتبديل بين تحديد/إلغاء تحديد صلاحية
+  togglePermission(code: string, isChecked: boolean): void {
+    this.selectedPermissions.update(current => {
+      if (isChecked) {
+        return [...current, code];
+      } else {
+        return current.filter(c => c !== code);
+      }
+    });
+  }
+
+  // تحديد أو إلغاء تحديد كل صلاحيات مجموعة معينة
+  toggleGroup(group: PermissionGroup, isChecked: boolean): void {
+    const codes = group.permissions.map(p => p.code);
+    this.selectedPermissions.update(current => {
+      if (isChecked) {
+        const newSet = new Set([...current, ...codes]);
+        return Array.from(newSet);
+      } else {
+        return current.filter(c => !codes.includes(c));
+      }
+    });
+  }
+
+  // التحقق مما إذا كانت كل صلاحيات المجموعة محددة
+  isGroupFullySelected(group: PermissionGroup): boolean {
+    return group.permissions.every(p => this.hasPermission(p.code));
+  }
+
+  // التحقق مما إذا كانت بعض صلاحيات المجموعة محددة (لتغيير شكل المفتاح)
+  isGroupPartiallySelected(group: PermissionGroup): boolean {
+    const selectedCount = group.permissions.filter(p => this.hasPermission(p.code)).length;
+    return selectedCount > 0 && selectedCount < group.permissions.length;
   }
 
   savePermissions(): void {
@@ -141,14 +198,12 @@ export class RoleDetail implements OnInit {
       },
       error: (err) => {
         this.permissionsSaving.set(false);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'خطأ',
-          detail: err?.error?.error?.message ?? 'تعذّر تحديث الصلاحيات.'
-        });
+        this.messageService.add({ severity: 'error', summary: 'خطأ', detail: err?.error?.error?.message ?? 'تعذّر تحديث الصلاحيات.' });
       }
     });
   }
+
+  // ============ Delete Role ============
 
   confirmDelete(): void {
     this.confirmationService.confirm({
@@ -167,11 +222,7 @@ export class RoleDetail implements OnInit {
             }
           },
           error: (err) => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'خطأ',
-              detail: err?.error?.error?.message ?? 'تعذّر حذف الدور.'
-            });
+            this.messageService.add({ severity: 'error', summary: 'خطأ', detail: err?.error?.error?.message ?? 'تعذّر حذف الدور.' });
           }
         });
       }
