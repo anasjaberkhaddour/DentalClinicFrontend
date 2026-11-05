@@ -32,4 +32,12 @@ export class DiagnosisTypeService {
   delete(id: string): Observable<ApiResponse<void>> {
     return this.api.delete<void>(`${this.baseUrl}/${id}`);
   }
+
+  getTreatments(id: string): Observable<ApiResponse<string[]>> {
+    return this.api.get<string[]>(`${this.baseUrl}/${id}/treatments`);
+  }
+  
+  assignTreatments(id: string, treatmentIds: string[]): Observable<ApiResponse<void>> {
+    return this.api.put<void>(`${this.baseUrl}/${id}/treatments`, treatmentIds);
+  }
 }

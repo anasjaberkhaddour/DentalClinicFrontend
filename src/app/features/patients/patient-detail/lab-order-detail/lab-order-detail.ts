@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed  } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -11,6 +11,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { DatePickerModule } from 'primeng/datepicker';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { LabOrderService, LabOrderDetails } from '../../../../core/services/lab-order.service';
 import { ToothChartService } from '../../../../core/services/tooth-chart.service';
@@ -23,7 +24,8 @@ import { ShadePicker } from '../../../../shared/components/shade-picker/shade-pi
   imports: [
     CommonModule, FormsModule, RouterLink,
     ButtonModule, SkeletonModule, DialogModule, InputNumberModule,
-    InputTextModule, TextareaModule, SelectModule, MultiSelectModule, DatePickerModule, ShadePicker
+    InputTextModule, TextareaModule, SelectModule, MultiSelectModule, DatePickerModule,
+    TooltipModule, ShadePicker
   ],
   templateUrl: './lab-order-detail.html',
   styleUrl: './lab-order-detail.scss'
@@ -42,7 +44,7 @@ export class LabOrderDetail implements OnInit {
 
   materials = signal<MaterialDto[]>([]);
   materialOptions = computed(() =>
-    this.materials().map(m => ({ label: m.nameAr, value: m.name }))
+    this.materials().map(m => ({ label: m.nameAr, value: m.id }))
   );
 
   patientId!: string;
@@ -70,7 +72,7 @@ export class LabOrderDetail implements OnInit {
     estimatedCost: null as number | null,
     expectedDeliveryDate: null as string | null,
     shade: '',
-    material: '',
+    materialId: '',
     instructions: '',
     notes: '',
     patientToothIds: [] as string[]
@@ -291,7 +293,7 @@ export class LabOrderDetail implements OnInit {
       estimatedCost: o.estimatedCost ?? null,
       expectedDeliveryDate: o.expectedDeliveryDate ?? null,
       shade: o.shade ?? '',
-      material: o.material ?? '',
+      materialId: o.materialId ?? '',
       instructions: o.instructions ?? '',
       notes: o.notes ?? '',
       patientToothIds: o.teeth.map(t => t.patientToothId)
@@ -323,7 +325,7 @@ export class LabOrderDetail implements OnInit {
       estimatedCost: this.editForm.estimatedCost,
       expectedDeliveryDate: this.editForm.expectedDeliveryDate,
       shade: this.editForm.shade || null,
-      material: this.editForm.material || null,
+      materialId: this.editForm.materialId || null,
       instructions: this.editForm.instructions || null,
       notes: this.editForm.notes || null,
       patientToothIds: this.editForm.patientToothIds

@@ -93,7 +93,6 @@ export const routes: Routes = [
 
       { path: 'materials', loadComponent: () => import('./features/materials/materials-list/materials-list').then(m => m.MaterialsList) },
 
-      { path: 'procedure-types', loadComponent: () => import('./features/procedure-types/procedure-types-list/procedure-types-list').then(m => m.ProcedureTypesList) },
       { path: 'diagnosis-types', loadComponent: () => import('./features/diagnosis-types/diagnosis-types-list/diagnosis-types-list').then(m => m.DiagnosisTypesList) },
       
       { path: 'lab-order-types', loadComponent: () => import('./features/lab-order-types/lab-order-types-list/lab-order-types-list').then(m => m.LabOrderTypesList) },

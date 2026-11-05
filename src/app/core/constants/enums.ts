@@ -181,25 +181,7 @@ export enum ContactOwnerType {
   export const ToothMobilityOptions = Object.entries(ToothMobilityLabels)
     .map(([k, v]) => ({ label: v, value: Number(k) }));
   
-  
-  export enum ProcedureContext {
-    ClinicalVisit = 1,
-    QuickProcedure = 2,
-    Emergency = 3,
-    FollowUp = 4
-  }
-  
-  export const ProcedureContextLabels: Record<number, string> = {
-    [ProcedureContext.ClinicalVisit]: 'زيارة سريرية',
-    [ProcedureContext.QuickProcedure]: 'إجراء سريع',
-    [ProcedureContext.Emergency]: 'طارئ',
-    [ProcedureContext.FollowUp]: 'متابعة'
-  };
-  
-  export const ProcedureContextOptions = Object.entries(ProcedureContextLabels)
-    .map(([k, v]) => ({ label: v, value: Number(k) }));
-  
-  
+
   // ============ Appointment ============
   
   export enum AppointmentStatus {

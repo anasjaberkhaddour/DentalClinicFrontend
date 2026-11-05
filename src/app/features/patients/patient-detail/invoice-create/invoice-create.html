@@ -17,15 +17,26 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <label class="block text-sm font-semibold text-slate-700 mb-2">العيادة <span class="text-red-500">*</span></label>
-        <p-select [(ngModel)]="form.clinicId" [options]="clinics()" optionLabel="label" optionValue="value" placeholder="اختر العيادة" styleClass="w-full" />
+        <p-select
+          [ngModel]="form().clinicId"
+          (ngModelChange)="updateForm({ clinicId: $event })"
+          [options]="clinics()" optionLabel="label" optionValue="value"
+          placeholder="اختر العيادة" styleClass="w-full" />
       </div>
       <div>
         <label class="block text-sm font-semibold text-slate-700 mb-2">العملة <span class="text-red-500">*</span></label>
-        <p-select [(ngModel)]="form.currencyId" [options]="currencies()" optionLabel="label" optionValue="value" placeholder="اختر العملة" styleClass="w-full" />
+        <p-select
+          [ngModel]="form().currencyId"
+          (ngModelChange)="updateForm({ currencyId: $event })"
+          [options]="currencies()" optionLabel="label" optionValue="value"
+          placeholder="اختر العملة" styleClass="w-full" />
       </div>
       <div>
         <label class="block text-sm font-semibold text-slate-700 mb-2">تاريخ الفاتورة</label>
-        <p-datepicker [(ngModel)]="form.invoiceDate" dateFormat="dd/mm/yy" styleClass="w-full" appendTo="body" />
+        <p-datepicker
+          [ngModel]="form().invoiceDate"
+          (ngModelChange)="updateForm({ invoiceDate: $event })"
+          dateFormat="dd/mm/yy" styleClass="w-full" appendTo="body" />
       </div>
     </div>
   </div>
@@ -42,41 +53,37 @@
     <div class="space-y-3">
       @for (item of items(); track $index; let i = $index) {
         <div class="grid grid-cols-12 gap-2 items-start p-3 rounded-xl bg-slate-50 border border-slate-100">
-          
-          <div class="col-span-12 md:col-span-3">
-            <label class="block text-xs text-slate-500 mb-1">المعالجة</label>
-            <p-select 
-              [options]="treatments()" 
-              optionLabel="nameAr" 
-              optionValue="id" 
-              [ngModel]="item.treatmentId"
-              (ngModelChange)="onTreatmentSelect(i, $event)"
-              placeholder="اختر المعالجة" 
-              [filter]="true"
-              appendTo="body"
-              styleClass="w-full" 
-              [showClear]="true" />
-          </div>
 
-          <div class="col-span-12 md:col-span-3">
-            <label class="block text-xs text-slate-500 mb-1">الوصف </label>
-            <input pInputText [(ngModel)]="item.description" placeholder="وصف البند" class="w-full" />
+          <div class="col-span-12 md:col-span-6">
+            <label class="block text-xs text-slate-500 mb-1">الوصف</label>
+            <input pInputText
+              [ngModel]="item.description"
+              (ngModelChange)="updateItem(i, { description: $event })"
+              placeholder="وصف البند" class="w-full" />
           </div>
 
           <div class="col-span-4 md:col-span-1">
             <label class="block text-xs text-slate-500 mb-1">الكمية</label>
-            <p-inputnumber [(ngModel)]="item.quantity" [min]="0.01" [minFractionDigits]="0" [maxFractionDigits]="2" styleClass="w-full" inputStyleClass="w-full" />
+            <p-inputnumber
+              [ngModel]="item.quantity"
+              (ngModelChange)="updateItem(i, { quantity: $event })"
+              [min]="0.01" [minFractionDigits]="0" [maxFractionDigits]="2"
+              styleClass="w-full" inputStyleClass="w-full" />
           </div>
 
           <div class="col-span-4 md:col-span-2">
             <label class="block text-xs text-slate-500 mb-1">السعر</label>
-            <p-inputnumber [(ngModel)]="item.unitPrice" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="2" styleClass="w-full" inputStyleClass="w-full" />
+            <p-inputnumber
+              [ngModel]="item.unitPrice"
+              (ngModelChange)="updateItem(i, { unitPrice: $event })"
+              [min]="0" [minFractionDigits]="0" [maxFractionDigits]="2"
+              styleClass="w-full" inputStyleClass="w-full" />
           </div>
 
           <div class="col-span-4 md:col-span-2">
             <label class="block text-xs text-slate-500 mb-1">المجموع</label>
             <div class="p-2 bg-white rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 h-10 flex items-center">
-              {{ (item.quantity * item.unitPrice) | number:'1.0-2' }}
+              {{ ((item.quantity ?? 0) * (item.unitPrice ?? 0)) | number:'1.0-2' }}
             </div>
           </div>
 
@@ -98,16 +105,27 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-semibold text-slate-700 mb-2">نسبة الخصم %</label>
-            <p-inputnumber [(ngModel)]="form.discountPercent" [min]="0" [max]="100" [minFractionDigits]="0" [maxFractionDigits]="2" styleClass="w-full" inputStyleClass="w-full" />
+            <p-inputnumber
+              [ngModel]="form().discountPercent"
+              (ngModelChange)="onPercentChange($event)"
+              [min]="0" [max]="100" [minFractionDigits]="0" [maxFractionDigits]="2"
+              styleClass="w-full" inputStyleClass="w-full" />
           </div>
           <div>
             <label class="block text-sm font-semibold text-slate-700 mb-2">خصم ثابت</label>
-            <p-inputnumber [(ngModel)]="form.discountAmount" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="2" styleClass="w-full" inputStyleClass="w-full" [disabled]="form.discountPercent > 0" />
+            <p-inputnumber
+              [ngModel]="form().discountAmount"
+              (ngModelChange)="onFixedChange($event)"
+              [min]="0" [minFractionDigits]="0" [maxFractionDigits]="2"
+              styleClass="w-full" inputStyleClass="w-full" />
           </div>
         </div>
         <div>
           <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات</label>
-          <textarea pTextarea [(ngModel)]="form.notes" rows="2" class="w-full"></textarea>
+          <textarea pTextarea
+            [ngModel]="form().notes"
+            (ngModelChange)="updateForm({ notes: $event })"
+            rows="2" class="w-full"></textarea>
         </div>
       </div>
 

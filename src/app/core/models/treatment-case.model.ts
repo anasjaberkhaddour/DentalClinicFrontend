@@ -54,6 +54,7 @@ export interface TreatmentCaseListItem {
     diagnosisTypeName: string;
     diagnosisTypeNameAr: string;
     notes?: string;
+    treatments: { id: string; nameAr: string }[];
   }
   
   export interface TreatmentCaseTooth {

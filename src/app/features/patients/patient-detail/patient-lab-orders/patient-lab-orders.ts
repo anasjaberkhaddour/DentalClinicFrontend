@@ -6,7 +6,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { MessageService } from 'primeng/api';
 import { LabOrderService, LabOrderListItem } from '../../../../core/services/lab-order.service';
 
-type FilterMode = 'all' | 'active' | 'done' | 'cancelled';
+type FilterMode = 'all' | 'draft' | 'inProgress' | 'done' | 'cancelled';
 
 @Component({
   selector: 'app-patient-lab-orders',
@@ -30,8 +30,10 @@ export class PatientLabOrders implements OnInit {
     const all = this.orders();
 
     switch (f) {
-      case 'active':
-        return all.filter(o => [1, 2, 3, 7].includes(o.status));
+      case 'draft':
+        return all.filter(o => o.status === 1);
+      case 'inProgress':
+        return all.filter(o => [2, 3, 7].includes(o.status));
       case 'done':
         return all.filter(o => [4, 5].includes(o.status));
       case 'cancelled':
@@ -43,7 +45,8 @@ export class PatientLabOrders implements OnInit {
 
   counts = computed(() => ({
     all: this.orders().length,
-    active: this.orders().filter(o => [1, 2, 3, 7].includes(o.status)).length,
+    draft: this.orders().filter(o => o.status === 1).length,
+    inProgress: this.orders().filter(o => [2, 3, 7].includes(o.status)).length,
     done: this.orders().filter(o => [4, 5].includes(o.status)).length,
     cancelled: this.orders().filter(o => o.status === 6).length,
   }));

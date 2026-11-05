@@ -34,15 +34,28 @@
       <button
         type="button"
         class="px-4 py-2 rounded-xl text-sm font-semibold transition-all border"
-        [class.bg-primary-600]="filter() === 'active'"
-        [class.text-white]="filter() === 'active'"
-        [class.border-primary-600]="filter() === 'active'"
-        [class.bg-white]="filter() !== 'active'"
-        [class.text-slate-600]="filter() !== 'active'"
-        [class.border-slate-200]="filter() !== 'active'"
-        (click)="setFilter('active')">
-        نشط
-        <span class="text-xs mr-1 opacity-70">({{ counts().active }})</span>
+        [class.bg-primary-600]="filter() === 'draft'"
+        [class.text-white]="filter() === 'draft'"
+        [class.border-primary-600]="filter() === 'draft'"
+        [class.bg-white]="filter() !== 'draft'"
+        [class.text-slate-600]="filter() !== 'draft'"
+        [class.border-slate-200]="filter() !== 'draft'"
+        (click)="setFilter('draft')">
+        مسودة
+        <span class="text-xs mr-1 opacity-70">({{ counts().draft }})</span>
+      </button>
+      <button
+        type="button"
+        class="px-4 py-2 rounded-xl text-sm font-semibold transition-all border"
+        [class.bg-primary-600]="filter() === 'inProgress'"
+        [class.text-white]="filter() === 'inProgress'"
+        [class.border-primary-600]="filter() === 'inProgress'"
+        [class.bg-white]="filter() !== 'inProgress'"
+        [class.text-slate-600]="filter() !== 'inProgress'"
+        [class.border-slate-200]="filter() !== 'inProgress'"
+        (click)="setFilter('inProgress')">
+        قيد التنفيذ
+        <span class="text-xs mr-1 opacity-70">({{ counts().inProgress }})</span>
       </button>
       <button
         type="button"
@@ -54,7 +67,7 @@
         [class.text-slate-600]="filter() !== 'done'"
         [class.border-slate-200]="filter() !== 'done'"
         (click)="setFilter('done')">
-        مكتمل
+        مركب
         <span class="text-xs mr-1 opacity-70">({{ counts().done }})</span>
       </button>
       <button

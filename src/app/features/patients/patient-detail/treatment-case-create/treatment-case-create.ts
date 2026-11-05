@@ -5,20 +5,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
-import { MultiSelectModule } from 'primeng/multiselect';
 import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
 import { TreatmentCaseService } from '../../../../core/services/treatment-case.service';
-import { ToothChartService } from '../../../../core/services/tooth-chart.service';
 import { ClinicService } from '../../../../core/services/clinic.service';
 
 @Component({
   selector: 'app-treatment-case-create',
   standalone: true,
-  imports: [
-    CommonModule, FormsModule,
-    ButtonModule, InputTextModule, TextareaModule, MultiSelectModule, SelectModule
-  ],
+  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, TextareaModule, SelectModule],
   templateUrl: './treatment-case-create.html',
   styleUrl: './treatment-case-create.scss'
 })
@@ -26,26 +21,20 @@ export class TreatmentCaseCreate implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private treatmentCaseService = inject(TreatmentCaseService);
-  private toothChartService = inject(ToothChartService);
   private clinicService = inject(ClinicService);
   private messageService = inject(MessageService);
 
   patientId!: string;
   saving = signal(false);
-
-  diagnosisOptions = signal<{ label: string; value: string }[]>([]);
-  toothOptions = signal<{ label: string; value: string }[]>([]);
   clinics = signal<{ label: string; value: string }[]>([]);
 
   form = {
     clinicId: '',
     title: '',
-    chiefComplaint: '',
     clinicalFindings: '',
+    chiefComplaint: '',
     treatmentPlanSummary: '',
-    notes: '',
-    diagnosisTypeIds: [] as string[],
-    patientToothIds: [] as string[]
+    notes: ''
   };
 
   ngOnInit(): void {
@@ -54,37 +43,7 @@ export class TreatmentCaseCreate implements OnInit {
       this.router.navigate(['/patients']);
       return;
     }
-
-    this.loadDiagnoses();
-    this.loadTeeth();
     this.loadClinics();
-  }
-
-  loadDiagnoses(): void {
-    this.treatmentCaseService.getDiagnosisTypes().subscribe({
-      next: (res) => {
-        if (res.isSuccess) {
-          this.diagnosisOptions.set(
-            res.value.map(d => ({ label: d.nameAr, value: d.id }))
-          );
-        }
-      }
-    });
-  }
-
-  loadTeeth(): void {
-    this.toothChartService.getChart(this.patientId).subscribe({
-      next: (res) => {
-        if (res.isSuccess) {
-          this.toothOptions.set(
-            res.value.teeth.map((t: any) => ({
-              label: `سن ${t.toothNumber}`,
-              value: t.id
-            }))
-          );
-        }
-      }
-    });
   }
 
   loadClinics(): void {
@@ -103,30 +62,33 @@ export class TreatmentCaseCreate implements OnInit {
       this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر العيادة.' });
       return;
     }
-    if (this.form.diagnosisTypeIds.length === 0) {
-      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر تشخيصاً واحداً على الأقل.' });
+    if (!this.form.title.trim()) {
+      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'عنوان الحالة مطلوب.' });
       return;
     }
 
     this.saving.set(true);
-    this.treatmentCaseService.create({
+    
+    // نرسل المصفوفات فارغة لأننا سنضيفها في صفحة التفاصيل
+    const payload = {
       patientId: this.patientId,
-      ...this.form
-    }).subscribe({
+      ...this.form,
+      diagnosisTypeIds: [],
+      patientToothIds: []
+    };
+
+    this.treatmentCaseService.create(payload).subscribe({
       next: (res) => {
         this.saving.set(false);
         if (res.isSuccess) {
-          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم إنشاء الحالة العلاجية.' });
+          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم إنشاء الحالة. يمكنك الآن إضافة التشخيصات والأسنان.' });
+          // ننتقل لصفحة التفاصيل مباشرة
           this.router.navigate(['/patients', this.patientId, 'treatment-cases', res.value]);
         }
       },
       error: (err) => {
         this.saving.set(false);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'خطأ',
-          detail: err?.error?.error?.message ?? 'تعذّر إنشاء الحالة.'
-        });
+        this.messageService.add({ severity: 'error', summary: 'خطأ', detail: err?.error?.error?.message ?? 'تعذّر إنشاء الحالة.' });
       }
     });
   }

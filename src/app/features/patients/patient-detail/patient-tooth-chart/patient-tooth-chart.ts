@@ -14,11 +14,13 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ToothChartService } from '../../../../core/services/tooth-chart.service';
 import { TreatmentCaseService } from '../../../../core/services/treatment-case.service';
+import { TreatmentService } from '../../../../core/services/treatment.service';
 import { ToothIcon } from '../../../../shared/components/tooth-icon/tooth-icon';
 import {
-  ToothChart, PatientTooth, ToothHistory, ProcedureType, MaterialDto,
+  ToothChart, PatientTooth, ToothHistory, MaterialDto,
   FDI_UPPER_RIGHT, FDI_UPPER_LEFT, FDI_LOWER_RIGHT, FDI_LOWER_LEFT,
-  getToothStatusName, getMobilityName
+  getToothStatusName, getMobilityName,
+  getToothStatusColor, getToothStatusBorderColor
 } from '../../../../core/models/tooth-chart.model';
 
 @Component({
@@ -38,6 +40,7 @@ export class PatientToothChart implements OnInit {
 
   private toothChartService = inject(ToothChartService);
   private treatmentCaseService = inject(TreatmentCaseService);
+  private treatmentService = inject(TreatmentService);
   private messageService = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
   private router = inject(Router);
@@ -47,12 +50,16 @@ export class PatientToothChart implements OnInit {
   selectedTooth = signal<PatientTooth | null>(null);
   toothHistory = signal<ToothHistory[]>([]);
   historyLoading = signal(false);
-  procedureTypes = signal<ProcedureType[]>([]);
   materials = signal<MaterialDto[]>([]);
   activeCases = signal<{ label: string; value: string }[]>([]);
+  treatments = signal<any[]>([]);
 
   materialOptions = computed(() =>
     this.materials().map(m => ({ label: m.nameAr, value: m.name }))
+  );
+
+  treatmentOptions = computed(() =>
+    this.treatments().map(t => ({ label: t.nameAr, value: t.id }))
   );
 
   upperRight = FDI_UPPER_RIGHT;
@@ -60,16 +67,14 @@ export class PatientToothChart implements OnInit {
   lowerRight = FDI_LOWER_RIGHT;
   lowerLeft = FDI_LOWER_LEFT;
 
-  // Edit status
   statusDialog = signal(false);
   statusSaving = signal(false);
   statusForm = { status: 1, mobility: 0, notes: '' };
 
-  // Add procedure
   procedureDialog = signal(false);
   procedureSaving = signal(false);
   procedureForm: {
-    procedureTypeId: string;
+    treatmentId: string;
     treatmentCaseId?: string;
     isMesial: boolean;
     isDistal: boolean;
@@ -80,7 +85,7 @@ export class PatientToothChart implements OnInit {
     material: string;
     notes: string;
   } = {
-    procedureTypeId: '',
+    treatmentId: '',
     treatmentCaseId: undefined,
     isMesial: false,
     isDistal: false,
@@ -92,16 +97,17 @@ export class PatientToothChart implements OnInit {
     notes: ''
   };
 
+  // القائمة المحدثة مع الألوان
   statusOptions = [
-    { label: 'سليم', value: 1 },
-    { label: 'مفقود', value: 2 },
-    { label: 'مخلوع', value: 3 },
-    { label: 'مدفون', value: 4 },
-    { label: 'غير بازغ', value: 5 },
-    { label: 'تاج', value: 6 },
-    { label: 'جسر', value: 7 },
-    { label: 'زرع', value: 8 },
-    { label: 'لبني', value: 9 },
+    { label: 'سليم', value: 1, color: getToothStatusColor(1), borderColor: getToothStatusBorderColor(1) },
+    { label: 'مفقود', value: 2, color: getToothStatusColor(2), borderColor: getToothStatusBorderColor(2) },
+    { label: 'مخلوع', value: 3, color: getToothStatusColor(3), borderColor: getToothStatusBorderColor(3) },
+    { label: 'مدفون', value: 4, color: getToothStatusColor(4), borderColor: getToothStatusBorderColor(4) },
+    { label: 'غير بازغ', value: 5, color: getToothStatusColor(5), borderColor: getToothStatusBorderColor(5) },
+    { label: 'تاج', value: 6, color: getToothStatusColor(6), borderColor: getToothStatusBorderColor(6) },
+    { label: 'جسر', value: 7, color: getToothStatusColor(7), borderColor: getToothStatusBorderColor(7) },
+    { label: 'زرع', value: 8, color: getToothStatusColor(8), borderColor: getToothStatusBorderColor(8) },
+    { label: 'لبني', value: 9, color: getToothStatusColor(9), borderColor: getToothStatusBorderColor(9) },
   ];
 
   mobilityOptions = [
@@ -111,14 +117,6 @@ export class PatientToothChart implements OnInit {
     { label: 'حركة 3', value: 3 },
   ];
 
-  procedureTypeOptions = computed(() =>
-    this.procedureTypes().map(p => ({ label: p.nameAr, value: p.id }))
-  );
-
-  selectedProcedureType = computed(() =>
-    this.procedureTypes().find(p => p.id === this.procedureForm.procedureTypeId)
-  );
-
   teethMap = computed(() => {
     const map = new Map<number, PatientTooth>();
     this.chart()?.teeth.forEach(t => map.set(t.toothNumber, t));
@@ -127,9 +125,39 @@ export class PatientToothChart implements OnInit {
 
   ngOnInit(): void {
     this.loadChart();
-    this.loadProcedureTypes();
     this.loadMaterials();
     this.loadActiveCases();
+    this.loadTreatments();
+  }
+
+  allTreatments = signal<any[]>([]);
+
+  loadTreatments(): void {
+    this.treatmentService.getAll({ page: 1, pageSize: 200, isActive: true }).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          this.allTreatments.set(res.value.items);
+          this.treatments.set(res.value.items);
+        }
+      }
+    });
+  }
+
+  onCaseChange(): void {
+    const caseId = this.procedureForm.treatmentCaseId;
+    this.procedureForm.treatmentId = '';
+
+    if (!caseId) {
+      this.treatments.set(this.allTreatments());
+    } else {
+      this.treatmentCaseService.getAvailableTreatments(caseId).subscribe({
+        next: (res) => {
+          if (res.isSuccess) {
+            this.treatments.set(res.value);
+          }
+        }
+      });
+    }
   }
 
   loadMaterials(): void {
@@ -169,14 +197,6 @@ export class PatientToothChart implements OnInit {
     });
   }
 
-  loadProcedureTypes(): void {
-    this.toothChartService.getProcedureTypes().subscribe({
-      next: (res) => {
-        if (res.isSuccess) this.procedureTypes.set(res.value);
-      }
-    });
-  }
-
   getTooth(num: number): PatientTooth | undefined {
     return this.teethMap().get(num);
   }
@@ -202,8 +222,6 @@ export class PatientToothChart implements OnInit {
     this.selectedTooth.set(null);
     this.toothHistory.set([]);
   }
-
-  // ============ Edit status ============
 
   openStatusDialog(): void {
     const tooth = this.selectedTooth();
@@ -237,11 +255,9 @@ export class PatientToothChart implements OnInit {
     });
   }
 
-  // ============ Add procedure ============
-
   openProcedureDialog(): void {
     this.procedureForm = {
-      procedureTypeId: '',
+      treatmentId: '',
       treatmentCaseId: undefined,
       isMesial: false,
       isDistal: false,
@@ -259,26 +275,16 @@ export class PatientToothChart implements OnInit {
     const tooth = this.selectedTooth();
     if (!tooth) return;
 
-    if (!this.procedureForm.procedureTypeId) {
-      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر نوع الإجراء.' });
+    if (!this.procedureForm.treatmentId) {
+      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر العلاج.' });
       return;
-    }
-
-    const pt = this.selectedProcedureType();
-    if (pt?.requiresSurface) {
-      const hasSurface = this.procedureForm.isMesial || this.procedureForm.isDistal
-        || this.procedureForm.isBuccal || this.procedureForm.isLingual || this.procedureForm.isOcclusal;
-      if (!hasSurface) {
-        this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر سطحاً واحداً على الأقل.' });
-        return;
-      }
     }
 
     this.procedureSaving.set(true);
 
     const payload = {
       patientToothId: tooth.id,
-      procedureTypeId: this.procedureForm.procedureTypeId,
+      treatmentId: this.procedureForm.treatmentId,
       treatmentCaseId: this.procedureForm.treatmentCaseId || undefined,
       isMesial: this.procedureForm.isMesial,
       isDistal: this.procedureForm.isDistal,
@@ -310,8 +316,6 @@ export class PatientToothChart implements OnInit {
     });
   }
 
-  // ============ Delete procedure ============
-
   confirmDeleteHistory(h: ToothHistory): void {
     this.confirmationService.confirm({
       message: 'هل تريد حذف هذا الإجراء من التاريخ؟',
@@ -333,8 +337,6 @@ export class PatientToothChart implements OnInit {
     });
   }
 
-  // ============ Lab order ============
-
   createLabOrder(): void {
     const tooth = this.selectedTooth();
     if (!tooth) return;
@@ -343,8 +345,6 @@ export class PatientToothChart implements OnInit {
       { queryParams: { toothId: tooth.id } }
     );
   }
-
-  // ============ Helpers ============
 
   reloadTooth(patientToothId: string): void {
     this.toothChartService.getTooth(patientToothId).subscribe({

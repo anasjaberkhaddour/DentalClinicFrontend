@@ -22,6 +22,10 @@ export class TreatmentCaseService {
     return this.api.get<TreatmentCaseDetails>(API_ENDPOINTS.treatmentCases.byId(id));
   }
 
+  getAvailableTreatments(caseId: string): Observable<ApiResponse<any[]>> {
+    return this.api.get<any[]>(`${API_ENDPOINTS.treatmentCases.byId(caseId)}/available-treatments`);
+  }
+
   create(request: CreateTreatmentCaseRequest): Observable<ApiResponse<string>> {
     return this.api.post<string>(API_ENDPOINTS.treatmentCases.base, request);
   }
@@ -44,5 +48,17 @@ export class TreatmentCaseService {
 
   getPatientTeeth(patientId: string): Observable<ApiResponse<any>> {
     return this.api.get<any>(API_ENDPOINTS.toothChart.chart(patientId));
+  }
+
+  updateDiagnoses(id: string, diagnosisTypeIds: string[]): Observable<ApiResponse<void>> {
+    return this.api.put<void>(`${API_ENDPOINTS.treatmentCases.byId(id)}/diagnoses`, diagnosisTypeIds);
+  }
+  
+  updateTeeth(id: string, patientToothIds: string[]): Observable<ApiResponse<void>> {
+    return this.api.put<void>(`${API_ENDPOINTS.treatmentCases.byId(id)}/teeth`, patientToothIds);
+  }
+
+  getUnbilledTreatments(patientId: string): Observable<ApiResponse<any[]>> {
+    return this.api.get<any[]>(`/api/v1/Patients/${patientId}/unbilled-treatments`);
   }
 }

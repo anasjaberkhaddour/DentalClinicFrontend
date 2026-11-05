@@ -1,127 +1,194 @@
 <div class="space-y-6">
 
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-slate-800">أنواع التشخيص</h1>
-        <p class="text-slate-500 text-sm mt-1">إدارة التشخيصات الطبية للحالات</p>
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">أنواع التشخيص</h1>
+      <p class="text-slate-500 text-sm mt-1">إدارة التشخيصات الطبية للحالات</p>
+    </div>
+    <button pButton type="button" label="إضافة تشخيص" icon="pi pi-plus" (click)="openCreate()"></button>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="md:col-span-2">
+        <input
+          pInputText
+          [(ngModel)]="filter.search"
+          (keyup.enter)="onSearch()"
+          placeholder="ابحث بالرمز أو الاسم..."
+          class="w-full !py-2.5 !px-4 !rounded-xl" />
       </div>
+      <p-select
+        [(ngModel)]="filter.isActive"
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="الحالة"
+        appendTo="body"
+        styleClass="w-full"
+        (onChange)="onSearch()" />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-3">
+      <p-skeleton height="3rem" />
+      <p-skeleton height="3rem" />
+      <p-skeleton height="3rem" />
+    </div>
+  }
+
+  @else if (items().length === 0) {
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-16 text-center">
+      <i class="pi pi-list text-slate-300 text-4xl mb-3 block"></i>
+      <h3 class="text-lg font-semibold text-slate-600 mb-1">لا توجد تشخيصات</h3>
+      <p class="text-sm text-slate-400 mb-6">ابدأ بإضافة أول تشخيص</p>
       <button pButton type="button" label="إضافة تشخيص" icon="pi pi-plus" (click)="openCreate()"></button>
     </div>
-  
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div class="md:col-span-2">
-          <input
-            pInputText
-            [(ngModel)]="filter.search"
-            (keyup.enter)="onSearch()"
-            placeholder="ابحث بالرمز أو الاسم..."
-            class="w-full !py-2.5 !px-4 !rounded-xl" />
-        </div>
-        <p-select
-          [(ngModel)]="filter.isActive"
-          [options]="statusOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="الحالة"
-          appendTo="body"
-          styleClass="w-full"
-          (onChange)="onSearch()" />
-      </div>
-    </div>
-  
-    @if (loading()) {
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-3">
-        <p-skeleton height="3rem" />
-        <p-skeleton height="3rem" />
-        <p-skeleton height="3rem" />
-      </div>
-    }
-  
-    @else if (items().length === 0) {
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-16 text-center">
-        <i class="pi pi-list text-slate-300 text-4xl mb-3 block"></i>
-        <h3 class="text-lg font-semibold text-slate-600 mb-1">لا توجد تشخيصات</h3>
-        <p class="text-sm text-slate-400 mb-6">ابدأ بإضافة أول تشخيص</p>
-        <button pButton type="button" label="إضافة تشخيص" icon="pi pi-plus" (click)="openCreate()"></button>
-      </div>
-    }
-  
-    @else {
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <table class="w-full">
-          <thead class="bg-slate-50 border-b border-slate-200">
-            <tr class="text-right text-sm font-semibold text-slate-600">
-              <th class="px-4 py-3">الرمز</th>
-              <th class="px-4 py-3">الاسم</th>
-              <th class="px-4 py-3">الفئة</th>
-              <th class="px-4 py-3">الترتيب</th>
-              <th class="px-4 py-3">الحالة</th>
-              <th class="px-4 py-3 w-32">إجراءات</th>
+  }
+
+  @else {
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr class="text-right text-sm font-semibold text-slate-600">
+            <th class="px-4 py-3">الرمز</th>
+            <th class="px-4 py-3">الاسم</th>
+            <th class="px-4 py-3">الحالة</th>
+            <th class="px-4 py-3 w-32">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.id) {
+            <tr class="border-b border-slate-100 hover:bg-slate-50">
+              <td class="px-4 py-3">
+                <span class="font-mono font-semibold text-slate-700">{{ item.code }}</span>
+              </td>
+              <td class="px-4 py-3 font-semibold text-slate-800">{{ item.nameAr }}</td>
+              <td class="px-4 py-3">
+                @if (item.isActive) {
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-semibold">نشط</span>
+                } @else {
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-semibold">معطّل</span>
+                }
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1">
+                  <button pButton type="button" icon="pi pi-pencil" [text]="true" [rounded]="true" size="small" (click)="openEdit(item)"></button>
+                  <button pButton type="button" icon="pi pi-briefcase" severity="info" [text]="true" [rounded]="true" size="small" pTooltip="العلاجات المرتبطة" (click)="openTreatments(item)"></button>
+                  <button pButton type="button" icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" size="small" (click)="confirmDelete(item)"></button>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            @for (item of items(); track item.id) {
-              <tr class="border-b border-slate-100 hover:bg-slate-50">
-                <td class="px-4 py-3">
-                  <span class="font-mono font-semibold text-slate-700">{{ item.code }}</span>
-                </td>
-                <td class="px-4 py-3 font-semibold text-slate-800">{{ item.nameAr }}</td>
-                <td class="px-4 py-3 text-slate-600 text-sm">{{ item.categoryAr || '—' }}</td>
-                <td class="px-4 py-3 text-slate-600">{{ item.displayOrder }}</td>
-                <td class="px-4 py-3">
-                  @if (item.isActive) {
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-semibold">نشط</span>
-                  } @else {
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-semibold">معطّل</span>
-                  }
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-1">
-                    <button pButton type="button" icon="pi pi-pencil" [text]="true" [rounded]="true" size="small" (click)="openEdit(item)"></button>
-                    <button pButton type="button" icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" size="small" (click)="confirmDelete(item)"></button>
-                  </div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-  
-      @if (totalRecords() > 0) {
-        <p-paginator
-          [rows]="filter.pageSize!"
-          [totalRecords]="totalRecords()"
-          [rowsPerPageOptions]="[20, 40, 80]"
-          (onPageChange)="onPageChange($event)"
-          styleClass="!bg-transparent !border-none" />
-      }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (totalRecords() > 0) {
+      <p-paginator
+        [rows]="filter.pageSize!"
+        [totalRecords]="totalRecords()"
+        [rowsPerPageOptions]="[20, 40, 80]"
+        (onPageChange)="onPageChange($event)"
+        styleClass="!bg-transparent !border-none" />
     }
+  }
+</div>
+
+<!-- Create Dialog -->
+<p-dialog [visible]="createDialog()" (visibleChange)="createDialog.set($event)" header="إضافة تشخيص" [modal]="true" [style]="{ width: '500px' }" appendTo="body">
+  <div class="space-y-4 py-2">
+    <div><label class="block text-sm font-semibold text-slate-700 mb-2">الرمز *</label><input pInputText [(ngModel)]="form.code" class="w-full" dir="ltr" /></div>
+    <div><label class="block text-sm font-semibold text-slate-700 mb-2">الاسم *</label><input pInputText [(ngModel)]="form.nameAr" class="w-full" /></div>
+    <div class="flex items-center gap-3"><p-toggleswitch [(ngModel)]="form.isActive" /><label class="text-sm font-semibold text-slate-700">نشط</label></div>
   </div>
+  <ng-template pTemplate="footer">
+    <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="createDialog.set(false)"></button>
+    <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="saving()" (click)="saveCreate()"></button>
+  </ng-template>
+</p-dialog>
+
+<!-- Edit Dialog -->
+<p-dialog [visible]="editDialog()" (visibleChange)="editDialog.set($event)" header="تعديل التشخيص" [modal]="true" [style]="{ width: '500px' }" appendTo="body">
+  <div class="space-y-4 py-2">
+    <div><label class="block text-sm font-semibold text-slate-700 mb-2">الرمز *</label><input pInputText [(ngModel)]="editForm.code" class="w-full" dir="ltr" /></div>
+    <div><label class="block text-sm font-semibold text-slate-700 mb-2">الاسم *</label><input pInputText [(ngModel)]="editForm.nameAr" class="w-full" /></div>
+    <div class="flex items-center gap-3"><p-toggleswitch [(ngModel)]="editForm.isActive" /><label class="text-sm font-semibold text-slate-700">نشط</label></div>
+  </div>
+  <ng-template pTemplate="footer">
+    <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="editDialog.set(false)"></button>
+    <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="editSaving()" (click)="saveEdit()"></button>
+  </ng-template>
+</p-dialog>
+
+<!-- Treatments Dialog (Grid Layout) -->
+<p-dialog [visible]="treatmentsDialog()" (visibleChange)="treatmentsDialog.set($event)" header="إدارة العلاجات المرتبطة" [modal]="true" [style]="{ width: '850px', height: '80vh' }" [contentStyle]="{ overflowY: 'hidden' }" appendTo="body">
   
-  <p-dialog [visible]="createDialog()" (visibleChange)="createDialog.set($event)" header="إضافة تشخيص" [modal]="true" [style]="{ width: '500px' }" appendTo="body">
-    <div class="space-y-4 py-2">
-      <div><label class="block text-sm font-semibold text-slate-700 mb-2">الرمز *</label><input pInputText [(ngModel)]="form.code" class="w-full" dir="ltr" /></div>
-      <div><label class="block text-sm font-semibold text-slate-700 mb-2">الاسم *</label><input pInputText [(ngModel)]="form.nameAr" class="w-full" /></div>
-      <div><label class="block text-sm font-semibold text-slate-700 mb-2">الفئة</label><input pInputText [(ngModel)]="form.categoryAr" class="w-full" /></div>
-      <div><label class="block text-sm font-semibold text-slate-700 mb-2">الترتيب</label><p-inputnumber [(ngModel)]="form.displayOrder" [showButtons]="true" [min]="0" styleClass="w-full" /></div>
-      <div class="flex items-center gap-3"><p-toggleswitch [(ngModel)]="form.isActive" /><label class="text-sm font-semibold text-slate-700">نشط</label></div>
+  <div class="flex flex-col h-full space-y-4">
+    <div class="p-3 rounded-xl bg-primary-50 border border-primary-100 text-primary-800 font-semibold flex items-center gap-2 shrink-0">
+      <i class="pi pi-search"></i>
+      التشخيص: {{ editingDiagnosisName() }}
     </div>
-    <ng-template pTemplate="footer">
-      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="createDialog.set(false)"></button>
-      <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="saving()" (click)="saveCreate()"></button>
-    </ng-template>
-  </p-dialog>
-  
-  <p-dialog [visible]="editDialog()" (visibleChange)="editDialog.set($event)" header="تعديل التشخيص" [modal]="true" [style]="{ width: '500px' }" appendTo="body">
-    <div class="space-y-4 py-2">
-      <div><label class="block text-sm font-semibold text-slate-700 mb-2">الاسم *</label><input pInputText [(ngModel)]="editForm.nameAr" class="w-full" /></div>
-      <div><label class="block text-sm font-semibold text-slate-700 mb-2">الفئة</label><input pInputText [(ngModel)]="editForm.categoryAr" class="w-full" /></div>
-      <div><label class="block text-sm font-semibold text-slate-700 mb-2">الترتيب</label><p-inputnumber [(ngModel)]="editForm.displayOrder" [showButtons]="true" [min]="0" styleClass="w-full" /></div>
-      <div class="flex items-center gap-3"><p-toggleswitch [(ngModel)]="editForm.isActive" /><label class="text-sm font-semibold text-slate-700">نشط</label></div>
+
+    <div class="relative shrink-0">
+      <i class="pi pi-search absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+      <input 
+        pInputText 
+        [(ngModel)]="treatmentSearch"
+        (ngModelChange)="treatmentSearch.set($event)"
+        placeholder="ابحث عن علاج..." 
+        class="w-full !pr-10" />
     </div>
-    <ng-template pTemplate="footer">
-      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="editDialog.set(false)"></button>
-      <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="editSaving()" (click)="saveEdit()"></button>
-    </ng-template>
-  </p-dialog>
+
+    <!-- Grid Layout for Treatments -->
+    <!-- داخل ديالوغ إدارة العلاجات -->
+    <div class="flex-1 overflow-y-auto min-h-0 pr-1">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+        @for (t of filteredTreatments(); track t.value) {
+          <button 
+            type="button" 
+            class="flex items-center justify-between p-3 rounded-xl border-2 transition-all text-right h-full"
+            [class.border-primary-500]="isTreatmentSelected(t.value)"
+            [class.bg-primary-50]="isTreatmentSelected(t.value)"
+            [class.border-slate-200]="!isTreatmentSelected(t.value)"
+            [class.hover:border-primary-300]="!isTreatmentSelected(t.value)"
+            (click)="toggleTreatment(t.value)">
+            
+            <span class="font-semibold text-sm line-clamp-2" [class.text-primary-700]="isTreatmentSelected(t.value)" [class.text-slate-700]="!isTreatmentSelected(t.value)">
+              {{ t.label }}
+            </span>
+            
+            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ml-2 mt-1"
+                [class.bg-primary-500]="isTreatmentSelected(t.value)"
+                [class.border-primary-500]="isTreatmentSelected(t.value)"
+                [class.border-slate-300]="!isTreatmentSelected(t.value)">
+              @if (isTreatmentSelected(t.value)) {
+                <i class="pi pi-check text-white text-[10px]"></i>
+              }
+            </div>
+          </button>
+        } @empty {
+          <div class="col-span-full text-center py-8 text-slate-500">
+            <i class="pi pi-search text-2xl mb-2 block"></i>
+            لا توجد نتائج مطابقة
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between text-xs shrink-0 pt-2 border-t border-slate-100">
+      <span class="text-slate-500">
+        المحدد: <span class="font-bold text-primary-700">{{ selectedTreatmentIds().length }}</span>
+      </span>
+      @if (selectedTreatmentIds().length > 0) {
+        <button type="button" class="text-red-600 hover:underline" (click)="clearTreatments()">مسح الكل</button>
+      }
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="treatmentsDialog.set(false)"></button>
+    <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="treatmentsSaving()" (click)="saveTreatments()"></button>
+  </ng-template>
+</p-dialog>

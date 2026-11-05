@@ -10,6 +10,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { MessageService } from 'primeng/api';
 import { VisitService, CreateVisitRequest } from '../../../../core/services/visit.service';
 import { ClinicService } from '../../../../core/services/clinic.service';
+import { TreatmentCaseService } from '../../../../core/services/treatment-case.service';
 import { TokenStorageService } from '../../../../core/services/token-storage.service';
 
 @Component({
@@ -24,6 +25,7 @@ export class VisitCreate implements OnInit {
   private router = inject(Router);
   private visitService = inject(VisitService);
   private clinicService = inject(ClinicService);
+  private treatmentCaseService = inject(TreatmentCaseService);
   private tokenStorage = inject(TokenStorageService);
   private messageService = inject(MessageService);
 
@@ -32,14 +34,35 @@ export class VisitCreate implements OnInit {
   saving = signal(false);
   clinics = signal<{ label: string; value: string }[]>([]);
 
+  visitDate: Date | null = new Date();
+  visitTime: Date | null = new Date(new Date().getTime() - 30 * 60000);
+
   form: CreateVisitRequest = {
     patientId: '',
     treatmentCaseId: undefined as string | undefined,
     clinicId: '',
     doctorId: '',
-    visitDate: new Date().toISOString(),
+    visitDate: undefined,
     patientToothIds: [],
   };
+
+  private toLocalIsoString(date: Date): string {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const y = date.getFullYear();
+    const m = pad(date.getMonth() + 1);
+    const d = pad(date.getDate());
+    const h = pad(date.getHours());
+    const min = pad(date.getMinutes());
+    const s = pad(date.getSeconds());
+    
+    const offset = -date.getTimezoneOffset();
+    const sign = offset >= 0 ? '+' : '-';
+    const absOffset = Math.abs(offset);
+    const offH = pad(Math.floor(absOffset / 60));
+    const offM = pad(absOffset % 60);
+    
+    return `${y}-${m}-${d}T${h}:${min}:${s}${sign}${offH}:${offM}`;
+  }
 
   ngOnInit(): void {
     this.patientId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -54,6 +77,7 @@ export class VisitCreate implements OnInit {
     if (caseId) {
       this.caseId = caseId;
       this.form.treatmentCaseId = caseId;
+      this.loadCaseClinic(caseId);
     }
 
     const user = this.tokenStorage.getUser();
@@ -62,6 +86,16 @@ export class VisitCreate implements OnInit {
     }
 
     this.loadClinics();
+  }
+
+  loadCaseClinic(caseId: string): void {
+    this.treatmentCaseService.getById(caseId).subscribe({
+      next: (res: any) => {
+        if (res.isSuccess && res.value.clinicId) {
+          this.form.clinicId = res.value.clinicId;
+        }
+      }
+    });
   }
 
   loadClinics(): void {
@@ -75,7 +109,7 @@ export class VisitCreate implements OnInit {
             }))
           );
 
-          if (this.clinics().length === 1) {
+          if (this.clinics().length === 1 && !this.form.clinicId) {
             this.form.clinicId = this.clinics()[0].value;
           }
         }
@@ -101,6 +135,16 @@ export class VisitCreate implements OnInit {
       return;
     }
 
+    if (!this.visitDate || !this.visitTime) {
+      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'يرجى تحديد التاريخ والوقت.' });
+      return;
+    }
+
+    const combined = new Date(this.visitDate);
+    combined.setHours(this.visitTime.getHours(), this.visitTime.getMinutes(), 0, 0);
+    
+    this.form.visitDate = this.toLocalIsoString(combined);
+
     this.saving.set(true);
     this.visitService.create(this.form).subscribe({
       next: (response) => {
@@ -108,7 +152,6 @@ export class VisitCreate implements OnInit {
         if (response.isSuccess) {
           this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم إنشاء الجلسة بنجاح.' });
 
-          // If from a treatment case, return to the case detail
           if (this.caseId) {
             this.router.navigate(['/patients', this.patientId, 'treatment-cases', this.caseId]);
           } else {

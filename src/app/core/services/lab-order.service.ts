@@ -48,7 +48,8 @@ export interface LabOrderDetails {
   fittedAt?: string;
   status: number;
   shade?: string;
-  material?: string;
+  materialId?: string;
+  materialNameAr?: string;
   instructions?: string;
   notes?: string;
   createdAt: string;

@@ -12,8 +12,7 @@ import { MessageService } from 'primeng/api';
 import { InvoiceService, CreateInvoiceRequest, CreateInvoiceItemRequest } from '../../../../core/services/invoice.service';
 import { ClinicService } from '../../../../core/services/clinic.service';
 import { CurrencyService } from '../../../../core/services/currency.service';
-import { TreatmentService } from '../../../../core/services/treatment.service';
-import { TreatmentListItem } from '../../../../core/models/treatment.model';
+import { PatientService } from '../../../../core/services/patient.service';
 
 @Component({
   selector: 'app-invoice-create',
@@ -31,7 +30,7 @@ export class InvoiceCreate implements OnInit {
   private invoiceService = inject(InvoiceService);
   private clinicService = inject(ClinicService);
   private currencyService = inject(CurrencyService);
-  private treatmentService = inject(TreatmentService);
+  private patientService = inject(PatientService);
   private messageService = inject(MessageService);
 
   patientId!: string;
@@ -39,11 +38,10 @@ export class InvoiceCreate implements OnInit {
 
   clinics = signal<{ label: string; value: string }[]>([]);
   currencies = signal<{ label: string; value: string }[]>([]);
-  treatments = signal<TreatmentListItem[]>([]);
 
   items = signal<(CreateInvoiceItemRequest & { treatmentId?: string })[]>([]);
 
-  form: CreateInvoiceRequest = {
+  form = signal<CreateInvoiceRequest>({
     patientId: '',
     clinicId: '',
     currencyId: '',
@@ -52,18 +50,20 @@ export class InvoiceCreate implements OnInit {
     discountAmount: 0,
     visitIds: [],
     items: [],
-  };
+    notes: '',
+  });
 
   subTotal = computed(() =>
-    this.items().reduce((s, i) => s + (i.quantity * i.unitPrice), 0)
+    this.items().reduce((s, i) => s + ((i.quantity ?? 0) * (i.unitPrice ?? 0)), 0)
   );
 
   discountValue = computed(() => {
     const sub = this.subTotal();
-    if (this.form.discountPercent > 0) {
-      return Math.round((sub * this.form.discountPercent / 100) * 10000) / 10000;
-    }
-    return this.form.discountAmount ?? 0;
+    const f = this.form();
+    const percentDiscount = f.discountPercent > 0 ? (sub * f.discountPercent / 100) : 0;
+    const fixedDiscount = f.discountAmount ?? 0;
+    const combined = percentDiscount + fixedDiscount;
+    return Math.min(Math.round(combined * 10000) / 10000, sub);
   });
 
   total = computed(() => Math.max(0, this.subTotal() - this.discountValue()));
@@ -75,12 +75,11 @@ export class InvoiceCreate implements OnInit {
       return;
     }
 
-    this.form.patientId = this.patientId;
+    this.form.update(f => ({ ...f, patientId: this.patientId }));
 
-    this.addItem();
     this.loadClinics();
     this.loadCurrencies();
-    this.loadTreatments();
+    this.loadUnbilledTreatments();
   }
 
   loadClinics(): void {
@@ -88,7 +87,9 @@ export class InvoiceCreate implements OnInit {
       next: (response) => {
         if (response.isSuccess) {
           this.clinics.set(response.value.map((c: any) => ({ label: c.name, value: c.id })));
-          if (this.clinics().length === 1) this.form.clinicId = this.clinics()[0].value;
+          if (this.clinics().length === 1) {
+            this.form.update(f => ({ ...f, clinicId: this.clinics()[0].value }));
+          }
         }
       }
     });
@@ -103,36 +104,39 @@ export class InvoiceCreate implements OnInit {
             value: c.id
           })));
           const base = response.value.find((c: any) => c.isBase);
-          if (base) this.form.currencyId = base.id;
+          if (base) this.form.update(f => ({ ...f, currencyId: base.id }));
         }
       }
     });
   }
 
-  loadTreatments(): void {
-    this.treatmentService.getAll({ page: 1, pageSize: 200, isActive: true }).subscribe({
-      next: (response) => {
-        if (response.isSuccess) {
-          this.treatments.set(response.value.items);
+  loadUnbilledTreatments(): void {
+    this.patientService.getUnbilledTreatments(this.patientId).subscribe({
+      next: (res: any) => {
+        if (res.isSuccess) {
+          const treatments = res.value ?? [];
+          const mapped = treatments.map((t: any, idx: number) => ({
+            treatmentId: t.treatmentId,
+            description: `${t.treatmentNameAr} (سن ${t.toothNumber}) ${t.caseTitle ? '- ' + t.caseTitle : ''}`,
+            quantity: 1,
+            unitPrice: t.price,
+            displayOrder: idx + 1,
+            notes: `HistoryId:${t.historyId}`
+          }));
+
+          if (mapped.length > 0) {
+            this.items.set(mapped);
+          } else {
+            this.addItem();
+          }
+        } else {
+          this.addItem();
         }
+      },
+      error: () => {
+        this.addItem();
       }
     });
-  }
-
-  onTreatmentSelect(index: number, treatmentId: string): void {
-    const treatment = this.treatments().find(t => t.id === treatmentId);
-    if (treatment) {
-      this.items.update(list => {
-        const newList = [...list];
-        newList[index] = {
-          ...newList[index],
-          treatmentId: treatment.id,
-          description: treatment.nameAr,
-          unitPrice: treatment.estimatedPrice
-        };
-        return newList;
-      });
-    }
   }
 
   addItem(): void {
@@ -152,12 +156,41 @@ export class InvoiceCreate implements OnInit {
     this.items.update(list => list.filter((_, i) => i !== index));
   }
 
+  updateItem(index: number, patch: Partial<CreateInvoiceItemRequest>): void {
+    this.items.update(list => {
+      const newList = [...list];
+      newList[index] = { ...newList[index], ...patch };
+      return newList;
+    });
+  }
+
+  updateForm(patch: Partial<CreateInvoiceRequest>): void {
+    this.form.update(f => ({ ...f, ...patch }));
+  }
+
+  onPercentChange(value: number | null): void {
+    this.form.update(f => ({
+      ...f,
+      discountPercent: value ?? 0,
+      discountAmount: (value ?? 0) > 0 ? 0 : f.discountAmount
+    }));
+  }
+
+  onFixedChange(value: number | null): void {
+    this.form.update(f => ({
+      ...f,
+      discountAmount: value ?? 0,
+      discountPercent: (value ?? 0) > 0 ? 0 : f.discountPercent
+    }));
+  }
+
   save(): void {
-    if (!this.form.clinicId) {
+    const f = this.form();
+    if (!f.clinicId) {
       this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر العيادة.' });
       return;
     }
-    if (!this.form.currencyId) {
+    if (!f.currencyId) {
       this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر العملة.' });
       return;
     }
@@ -169,10 +202,10 @@ export class InvoiceCreate implements OnInit {
       return;
     }
 
-    this.form.items = cleanItems;
+    const payload: CreateInvoiceRequest = { ...f, items: cleanItems };
     this.saving.set(true);
 
-    this.invoiceService.create(this.form).subscribe({
+    this.invoiceService.create(payload).subscribe({
       next: (response) => {
         this.saving.set(false);
         if (response.isSuccess) {

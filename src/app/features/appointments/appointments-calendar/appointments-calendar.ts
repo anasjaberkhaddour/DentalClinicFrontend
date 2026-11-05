@@ -11,7 +11,6 @@ import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
 import { MessageService } from 'primeng/api';
 import { AppointmentService } from '../../../core/services/appointment.service';
 import { ClinicService } from '../../../core/services/clinic.service';
@@ -23,7 +22,7 @@ import { AppointmentListItem } from '../../../core/models/patient.model';
   standalone: true,
   imports: [
     CommonModule, FormsModule, FullCalendarModule,
-    ButtonModule, SelectModule, DialogModule, InputTextModule, InputNumberModule
+    ButtonModule, SelectModule, DialogModule, InputTextModule
   ],
   templateUrl: './appointments-calendar.html',
   styleUrl: './appointments-calendar.scss'
@@ -36,7 +35,7 @@ export class AppointmentsCalendar implements OnInit {
   private router = inject(Router);
 
   loading = signal(true);
-  clinics = signal<{ label: string; value: string | null }[]>([]);
+  clinics = signal<{ label: string; value: string | null; schedules: any[]; appointmentDurationMinutes: number }[]>([]);
   selectedClinic = signal<string | null>(null);
 
   dayAddDialog = signal(false);
@@ -50,11 +49,13 @@ export class AppointmentsCalendar implements OnInit {
 
   apptForm = {
     time: '09:00',
-    durationMinutes: 30,
     clinicId: '',
     reason: '',
     notes: ''
   };
+
+  availableSlots = signal<{ label: string; isBooked: boolean }[]>([]);
+  isLoadingSlots = signal(false);
 
   clinicOptionsForForm = computed(() =>
     this.clinics().filter(c => c.value !== null)
@@ -95,9 +96,14 @@ export class AppointmentsCalendar implements OnInit {
     this.clinicService.getAll().subscribe({
       next: (res) => {
         if (res.isSuccess) {
-          const options: { label: string; value: string | null }[] =
-            [{ label: 'كل العيادات', value: null }];
-          res.value.forEach((c: any) => options.push({ label: c.name, value: c.id }));
+          const options: { label: string; value: string | null; schedules: any[]; appointmentDurationMinutes: number }[] =
+            [{ label: 'كل العيادات', value: null, schedules: [], appointmentDurationMinutes: 30 }];
+          res.value.forEach((c: any) => options.push({ 
+            label: c.name, 
+            value: c.id,
+            schedules: c.schedules || [],
+            appointmentDurationMinutes: c.appointmentDurationMinutes || 30
+          }));
           this.clinics.set(options);
         }
       }
@@ -204,13 +210,87 @@ export class AppointmentsCalendar implements OnInit {
       ?? '';
 
     this.apptForm = {
-      time: '09:00',
-      durationMinutes: 30,
+      time: '',
       clinicId: defaultClinic,
       reason: '',
       notes: ''
     };
+    
+    this.availableSlots.set([]);
     this.dayAddDialog.set(true);
+
+    if (defaultClinic) {
+      this.onClinicChangeDialog();
+    }
+  }
+
+  onClinicChangeDialog(): void {
+    const clinicId = this.apptForm.clinicId;
+    const date = this.dayAddDate();
+    this.apptForm.time = '';
+    this.availableSlots.set([]);
+
+    if (!clinicId || !date) return;
+
+    const selectedClinic = this.clinics().find(c => c.value === clinicId);
+    if (!selectedClinic || !selectedClinic.schedules || selectedClinic.schedules.length === 0) {
+      return;
+    }
+
+    const duration = selectedClinic.appointmentDurationMinutes || 30;
+    this.isLoadingSlots.set(true);
+
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    this.appointmentService.getAll({
+      clinicId,
+      dateFrom: startOfDay.toISOString(),
+      dateTo: endOfDay.toISOString(),
+      page: 1,
+      pageSize: 100
+    }).subscribe({
+      next: (res) => {
+        const bookedAppointments = res.isSuccess ? res.value.items : [];
+        const slots: { label: string; isBooked: boolean }[] = [];
+
+        selectedClinic.schedules.forEach((schedule: any) => {
+          const [startH, startM] = schedule.startTime.split(':').map(Number);
+          const [endH, endM] = schedule.endTime.split(':').map(Number);
+
+          let current = new Date(date);
+          current.setHours(startH, startM, 0, 0);
+
+          const end = new Date(date);
+          end.setHours(endH, endM, 0, 0);
+
+          while (current < end) {
+            const slotTime = new Date(current);
+            
+            const isBooked = bookedAppointments.some((apt: any) => {
+              const aptStart = new Date(apt.scheduledAt);
+              const aptEnd = new Date(aptStart.getTime() + apt.durationMinutes * 60000);
+              const slotEnd = new Date(slotTime.getTime() + duration * 60000);
+              
+              return slotTime < aptEnd && slotEnd > aptStart;
+            });
+
+            const timeString = slotTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            slots.push({ label: timeString, isBooked });
+
+            current.setMinutes(current.getMinutes() + duration);
+          }
+        });
+
+        this.availableSlots.set(slots);
+        this.isLoadingSlots.set(false);
+      },
+      error: () => {
+        this.isLoadingSlots.set(false);
+      }
+    });
   }
 
   searchPatients(): void {
@@ -248,6 +328,10 @@ export class AppointmentsCalendar implements OnInit {
       this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر العيادة.' });
       return;
     }
+    if (!this.apptForm.time) {
+      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر وقت الموعد.' });
+      return;
+    }
 
     const [hours, minutes] = this.apptForm.time.split(':').map(Number);
     const scheduledAt = new Date(date);
@@ -259,13 +343,15 @@ export class AppointmentsCalendar implements OnInit {
       return;
     }
 
+    const duration = this.clinics().find(c => c.value === this.apptForm.clinicId)?.appointmentDurationMinutes || 30;
+
     this.dayAddSaving.set(true);
     this.appointmentService.create({
       patientId: patient.id,
       clinicId: this.apptForm.clinicId,
       doctorId: userId,
       scheduledAt: scheduledAt.toISOString(),
-      durationMinutes: this.apptForm.durationMinutes,
+      durationMinutes: duration,
       reason: this.apptForm.reason,
       notes: this.apptForm.notes
     }).subscribe({

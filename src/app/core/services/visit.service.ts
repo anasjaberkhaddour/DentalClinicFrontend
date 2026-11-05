@@ -43,5 +43,4 @@ export class VisitService {
   delete(id: string): Observable<ApiResponse<void>> {
     return this.api.delete<void>(API_ENDPOINTS.visits.byId(id));
   }
-
 }

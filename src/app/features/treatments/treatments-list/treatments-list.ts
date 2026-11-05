@@ -65,16 +65,10 @@ export class TreatmentsList implements OnInit {
     return {
       code: '',
       nameAr: '',
-      categoryAr: '',
       descriptionAr: '',
       estimatedPrice: 0,
       currencyId: null as string | null,
-      estimatedDurationMinutes: 0,
-      requiresTooth: false,
-      requiresSurface: false,
-      createsLabOrder: false,
-      isActive: true,
-      displayOrder: 0
+      isActive: true
     };
   }
 
@@ -133,7 +127,7 @@ export class TreatmentsList implements OnInit {
       currencyId: this.form.currencyId || undefined
     };
 
-    this.service.create(payload).subscribe({
+    this.service.create(payload as any).subscribe({
       next: (res) => {
         this.saving.set(false);
         if (res.isSuccess) {
@@ -157,16 +151,10 @@ export class TreatmentsList implements OnInit {
     this.editForm = {
       code: t.code,
       nameAr: t.nameAr,
-      categoryAr: t.categoryAr ?? '',
       descriptionAr: '',
       estimatedPrice: t.estimatedPrice,
       currencyId: null,
-      estimatedDurationMinutes: t.estimatedDurationMinutes,
-      requiresTooth: t.requiresTooth,
-      requiresSurface: t.requiresSurface,
-      createsLabOrder: t.createsLabOrder,
-      isActive: t.isActive,
-      displayOrder: t.displayOrder
+      isActive: t.isActive
     };
     this.editDialog.set(true);
 
@@ -177,16 +165,10 @@ export class TreatmentsList implements OnInit {
           this.editForm = {
             code: d.code,
             nameAr: d.nameAr,
-            categoryAr: d.categoryAr ?? '',
             descriptionAr: d.descriptionAr ?? '',
             estimatedPrice: d.estimatedPrice,
             currencyId: d.currencyId ?? null,
-            estimatedDurationMinutes: d.estimatedDurationMinutes,
-            requiresTooth: d.requiresTooth,
-            requiresSurface: d.requiresSurface,
-            createsLabOrder: d.createsLabOrder,
-            isActive: d.isActive,
-            displayOrder: d.displayOrder
+            isActive: d.isActive
           };
         }
       }
@@ -203,20 +185,15 @@ export class TreatmentsList implements OnInit {
 
     this.editSaving.set(true);
     const payload = {
+      code: this.editForm.code,
       nameAr: this.editForm.nameAr,
-      categoryAr: this.editForm.categoryAr || undefined,
       descriptionAr: this.editForm.descriptionAr || undefined,
       estimatedPrice: this.editForm.estimatedPrice,
       currencyId: this.editForm.currencyId || undefined,
-      estimatedDurationMinutes: this.editForm.estimatedDurationMinutes,
-      requiresTooth: this.editForm.requiresTooth,
-      requiresSurface: this.editForm.requiresSurface,
-      createsLabOrder: this.editForm.createsLabOrder,
-      isActive: this.editForm.isActive,
-      displayOrder: this.editForm.displayOrder
+      isActive: this.editForm.isActive
     };
 
-    this.service.update(id, payload).subscribe({
+    this.service.update(id, payload as any).subscribe({
       next: (res) => {
         this.editSaving.set(false);
         if (res.isSuccess) {

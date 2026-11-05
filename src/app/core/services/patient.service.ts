@@ -57,4 +57,8 @@ export class PatientService {
   updateMedicalHistory(patientId: string, data: any): Observable<ApiResponse<void>> {
     return this.api.put<void>(API_ENDPOINTS.patients.medicalHistory(patientId), data);
   }
+
+  getUnbilledTreatments(patientId: string): Observable<ApiResponse<any[]>> {
+    return this.api.get<any[]>(`/api/v1/Patients/${patientId}/unbilled-treatments`);
+  }
 }

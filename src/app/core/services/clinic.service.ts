@@ -31,4 +31,8 @@ export class ClinicService {
   delete(id: string): Observable<ApiResponse<void>> {
     return this.api.delete<void>(API_ENDPOINTS.clinics.byId(id));
   }
+
+  assignSchedules(id: string, schedules: any[]): Observable<ApiResponse<void>> {
+    return this.api.put<void>(`/api/v1/Clinics/${id}/schedules`, { schedules });
+  }
 }

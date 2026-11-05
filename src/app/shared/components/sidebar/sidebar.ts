@@ -62,7 +62,6 @@ export class Sidebar {
         { label: 'الأدوار والصلاحيات', icon: 'pi-shield', route: '/roles', permission: 'roles.view' },
         { label: 'أنواع العلاجات', icon: 'pi-list', route: '/treatments', permission: 'treatments.view' },
         { label: 'أنواع التشخيص', icon: 'pi-list', route: '/diagnosis-types', permission: 'treatments.view' },
-        { label: 'أنواع الإجراءات', icon: 'pi-list', route: '/procedure-types', permission: 'proceduretypes.manage' },
         { label: 'المواد الترميمية', icon: 'pi-tag', route: '/materials', permission: 'treatments.view' },
         { label: 'أنواع مواد المخزون', icon: 'pi-tags', route: '/inventory/categories', permission: 'inventory.view' },
         { label: 'أنواع طلبات المخبر', icon: 'pi-sitemap', route: '/lab-order-types', permission: 'labOrders.view' },

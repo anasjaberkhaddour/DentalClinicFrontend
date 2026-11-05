@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -12,6 +12,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { PaginatorModule } from 'primeng/paginator';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DiagnosisTypeService } from '../../../core/services/diagnosis-type.service';
+import { TreatmentService } from '../../../core/services/treatment.service';
 import { DiagnosisType, DiagnosisTypeFilter } from '../../../core/models/diagnosis-type.model';
 
 @Component({
@@ -28,6 +29,25 @@ export class DiagnosisTypesList implements OnInit {
   private service = inject(DiagnosisTypeService);
   private messageService = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
+  private treatmentService = inject(TreatmentService);
+
+  // Treatments Dialog
+  treatmentsDialog = signal(false);
+  treatmentsSaving = signal(false);
+  allTreatments = signal<{ label: string; value: string }[]>([]);
+  selectedTreatmentIds = signal<string[]>([]);
+  treatmentSearch = signal('');
+  editingDiagnosisId = signal<string | null>(null);
+  editingDiagnosisName = signal<string>('');
+
+  filteredTreatments = computed(() => {
+    const s = this.treatmentSearch().toLowerCase().trim();
+    let list = this.allTreatments();
+    if (s) {
+      list = list.filter(t => t.label.toLowerCase().includes(s));
+    }
+    return list;
+  });
 
   loading = signal(true);
   items = signal<DiagnosisType[]>([]);
@@ -43,12 +63,12 @@ export class DiagnosisTypesList implements OnInit {
 
   createDialog = signal(false);
   saving = signal(false);
-  form = { code: '', nameAr: '', categoryAr: '', isActive: true, displayOrder: 0 };
+  form = { code: '', nameAr: '', isActive: true };
 
   editDialog = signal(false);
   editSaving = signal(false);
   editingId = signal<string | null>(null);
-  editForm = { nameAr: '', categoryAr: '', isActive: true, displayOrder: 0 };
+  editForm = { code: '', nameAr: '', isActive: true }; // تم إعادة الرمز
 
   ngOnInit(): void {
     this.load();
@@ -58,7 +78,7 @@ export class DiagnosisTypesList implements OnInit {
     this.loading.set(true);
     this.service.getAll(this.filter).subscribe({
       next: (res) => {
-        this.items.set(res.value); // هنا نأخذ المصفوفة مباشرة
+        this.items.set(res.value);
         this.totalRecords.set(res.value.length);
         this.loading.set(false);
       },
@@ -81,7 +101,7 @@ export class DiagnosisTypesList implements OnInit {
   }
 
   openCreate(): void {
-    this.form = { code: '', nameAr: '', categoryAr: '', isActive: true, displayOrder: 0 };
+    this.form = { code: '', nameAr: '', isActive: true };
     this.createDialog.set(true);
   }
 
@@ -92,7 +112,7 @@ export class DiagnosisTypesList implements OnInit {
     }
 
     this.saving.set(true);
-    this.service.create(this.form).subscribe({
+    this.service.create(this.form as any).subscribe({
       next: (res) => {
         this.saving.set(false);
         if (res.isSuccess) {
@@ -114,10 +134,9 @@ export class DiagnosisTypesList implements OnInit {
   openEdit(item: DiagnosisType): void {
     this.editingId.set(item.id);
     this.editForm = {
+      code: item.code,
       nameAr: item.nameAr,
-      categoryAr: item.categoryAr ?? '',
-      isActive: item.isActive,
-      displayOrder: item.displayOrder
+      isActive: item.isActive
     };
     this.editDialog.set(true);
   }
@@ -125,13 +144,13 @@ export class DiagnosisTypesList implements OnInit {
   saveEdit(): void {
     const id = this.editingId();
     if (!id) return;
-    if (!this.editForm.nameAr.trim()) {
-      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'الاسم مطلوب.' });
+    if (!this.editForm.code.trim() || !this.editForm.nameAr.trim()) {
+      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'الرمز والاسم مطلوبان.' });
       return;
     }
 
     this.editSaving.set(true);
-    this.service.update(id, this.editForm).subscribe({
+    this.service.update(id, this.editForm as any).subscribe({
       next: (res) => {
         this.editSaving.set(false);
         if (res.isSuccess) {
@@ -173,6 +192,66 @@ export class DiagnosisTypesList implements OnInit {
             });
           }
         });
+      }
+    });
+  }
+
+  // ============ Treatments Management ============
+
+  openTreatments(item: DiagnosisType): void {
+    this.editingDiagnosisId.set(item.id);
+    this.editingDiagnosisName.set(item.nameAr);
+    this.treatmentSearch.set('');
+
+    this.treatmentService.getAll({ page: 1, pageSize: 500, isActive: true }).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          this.allTreatments.set(res.value.items.map((t: any) => ({ label: t.nameAr, value: t.id })));
+        }
+      }
+    });
+  
+    this.service.getTreatments(item.id).subscribe({
+      next: (res) => {
+        if (res.isSuccess) this.selectedTreatmentIds.set(res.value);
+        this.treatmentsDialog.set(true);
+      }
+    });
+  }
+
+  isTreatmentSelected(id: string): boolean {
+    return this.selectedTreatmentIds().includes(id);
+  }
+
+  toggleTreatment(id: string): void {
+    const current = this.selectedTreatmentIds();
+    if (current.includes(id)) {
+      this.selectedTreatmentIds.set(current.filter(x => x !== id));
+    } else {
+      this.selectedTreatmentIds.set([...current, id]);
+    }
+  }
+
+  clearTreatments(): void {
+    this.selectedTreatmentIds.set([]);
+  }
+  
+  saveTreatments(): void {
+    const id = this.editingDiagnosisId();
+    if (!id) return;
+  
+    this.treatmentsSaving.set(true);
+    this.service.assignTreatments(id, this.selectedTreatmentIds()).subscribe({
+      next: (res) => {
+        this.treatmentsSaving.set(false);
+        if (res.isSuccess) {
+          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم تحديث العلاجات المرتبطة.' });
+          this.treatmentsDialog.set(false);
+        }
+      },
+      error: () => {
+        this.treatmentsSaving.set(false);
+        this.messageService.add({ severity: 'error', summary: 'خطأ', detail: 'تعذّر تحديث العلاجات.' });
       }
     });
   }

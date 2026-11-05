@@ -50,7 +50,7 @@ export class LabOrderCreate implements OnInit {
   materials = signal<MaterialDto[]>([]);
 
   materialOptions = computed(() =>
-    this.materials().map(m => ({ label: m.nameAr, value: m.name }))
+    this.materials().map(m => ({ label: m.nameAr, value: m.id }))
   );
 
   form = {
@@ -62,7 +62,7 @@ export class LabOrderCreate implements OnInit {
     estimatedCost: null as number | null,
     expectedDeliveryDate: null as string | null,
     shade: '',
-    material: '',
+    materialId: '',
     instructions: '',
     notes: '',
     patientToothIds: [] as string[]
@@ -124,9 +124,10 @@ export class LabOrderCreate implements OnInit {
 
   loadTypes(): void {
     this.labService.getAllTypes().subscribe({
-      next: (res) => {
+      next: (res: any) => {
         if (res.isSuccess) {
-          this.types.set(res.value.map((t: any) => ({ label: t.nameAr, value: t.id })));
+          const items = res.value?.items ?? res.value ?? [];
+          this.types.set(items.map((t: any) => ({ label: t.nameAr, value: t.id })));
         }
       }
     });
@@ -184,7 +185,7 @@ export class LabOrderCreate implements OnInit {
       estimatedCost: this.form.estimatedCost,
       expectedDeliveryDate: this.form.expectedDeliveryDate,
       shade: this.form.shade || null,
-      material: this.form.material || null,
+      materialId: this.form.materialId || null,
       instructions: this.form.instructions || null,
       notes: this.form.notes || null,
       patientToothIds: this.form.patientToothIds
@@ -218,25 +219,4 @@ export class LabOrderCreate implements OnInit {
   cancel(): void {
     this.router.navigate(['/patients', this.patientId]);
   }
-
-  toothShades = [
-    { code: 'A1', color: '#EAE0CC' },
-    { code: 'A2', color: '#DFCDAC' },
-    { code: 'A3', color: '#D7BC96' },
-    { code: 'A3.5', color: '#C9A87D' },
-    { code: 'A4', color: '#B5946F' },
-    { code: 'B1', color: '#F1EAD8' },
-    { code: 'B2', color: '#E8DBC0' },
-    { code: 'B3', color: '#DBC69E' },
-    { code: 'B4', color: '#C9B089' },
-    { code: 'C1', color: '#E0D3BC' },
-    { code: 'C2', color: '#CBB89A' },
-    { code: 'C3', color: '#B59F7A' },
-    { code: 'C4', color: '#9A8464' },
-    { code: 'D2', color: '#DDCFB8' },
-    { code: 'D3', color: '#C7B599' },
-    { code: 'D4', color: '#AE9575' },
-  ];
-  
-  shadeOptions = this.toothShades.map(s => ({ label: s.code, value: s.code }));
 }

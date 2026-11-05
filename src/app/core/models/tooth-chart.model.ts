@@ -20,10 +20,10 @@ export interface PatientTooth {
     toothNumber: number;
     treatmentCaseId?: string;
     treatmentCaseNumber?: string;
+    treatmentId?: string;
+    treatmentName?: string;
+    treatmentNameAr?: string;
     visitId?: string;
-    procedureTypeId: string;
-    procedureTypeName: string;
-    procedureTypeNameAr: string;
     isMesial: boolean;
     isDistal: boolean;
     isBuccal: boolean;
@@ -35,21 +35,9 @@ export interface PatientTooth {
     performedByUserId: string;
     performedByUserName: string;
     performedAt: string;
+    treatmentCaseTitle?: string;
   }
-  
-  export interface ProcedureType {
-    id: string;
-    code: string;
-    name: string;
-    nameAr: string;
-    category?: string;
-    categoryAr?: string;
-    requiresSurface: boolean;
-    requiresTooth: boolean;
-    createsLabOrder: boolean;
-    isActive: boolean;
-    displayOrder: number;
-  }
+
   
   export enum ToothStatus {
     Present = 1,
@@ -104,7 +92,7 @@ export interface PatientTooth {
   
   export function getToothStatusBorderColor(status: number): string {
     switch (status) {
-      case ToothStatus.Present:   return '#cbd5e1';
+      case ToothStatus.Present:   return '#64748b';
       case ToothStatus.Missing:   return '#9ca3af';
       case ToothStatus.Extracted: return '#b91c1c';
       case ToothStatus.Impacted:  return '#b45309';

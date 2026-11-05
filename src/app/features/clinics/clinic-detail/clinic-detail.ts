@@ -8,17 +8,18 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { DatePickerModule } from 'primeng/datepicker';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ClinicService } from '../../../core/services/clinic.service';
 import { UserService } from '../../../core/services/user.service';
-
+import { InputNumberModule } from 'primeng/inputnumber';
 @Component({
   selector: 'app-clinic-detail',
   standalone: true,
   imports: [
     CommonModule, FormsModule,
     ButtonModule, SkeletonModule, DialogModule, InputTextModule,
-    ToggleSwitchModule, MultiSelectModule
+    ToggleSwitchModule, MultiSelectModule, DatePickerModule, InputNumberModule
   ],
   templateUrl: './clinic-detail.html',
   styleUrl: './clinic-detail.scss'
@@ -43,13 +44,18 @@ export class ClinicDetail implements OnInit {
     address: '',
     city: '',
     country: '',
-    isActive: true
+    isActive: true,
+    appointmentDurationMinutes: 30,
   };
 
   usersDialog = signal(false);
   usersSaving = signal(false);
   userOptions = signal<{ label: string; value: string }[]>([]);
   selectedUserIds = signal<string[]>([]);
+
+  schedulesDialog = signal(false);
+  schedulesSaving = signal(false);
+  schedulesForm = signal<{ name: string; startTime: Date | null; endTime: Date | null }[]>([]);
 
   ngOnInit(): void {
     this.clinicId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -84,7 +90,8 @@ export class ClinicDetail implements OnInit {
       address: c.address ?? '',
       city: c.city ?? '',
       country: c.country ?? '',
-      isActive: c.isActive
+      isActive: c.isActive,
+      appointmentDurationMinutes: c.appointmentDurationMinutes ?? 30
     };
     this.editDialog.set(true);
   }
@@ -152,6 +159,64 @@ export class ClinicDetail implements OnInit {
           severity: 'error',
           summary: 'خطأ',
           detail: err?.error?.error?.message ?? 'تعذّر تحديث المستخدمين.'
+        });
+      }
+    });
+  }
+
+  openSchedulesDialog(): void {
+    const c = this.clinic();
+    if (!c) return;
+
+    const existing = (c.schedules ?? []).map((s: any) => {
+      const start = new Date();
+      const [sh, sm] = s.startTime.split(':');
+      start.setHours(Number(sh), Number(sm), 0, 0);
+
+      const end = new Date();
+      const [eh, em] = s.endTime.split(':');
+      end.setHours(Number(eh), Number(em), 0, 0);
+
+      return { name: s.name, startTime: start, endTime: end };
+    });
+
+    this.schedulesForm.set(existing.length ? existing : [{ name: '', startTime: null, endTime: null }]);
+    this.schedulesDialog.set(true);
+  }
+
+  addSchedule(): void {
+    this.schedulesForm.update(list => [...list, { name: '', startTime: null, endTime: null }]);
+  }
+
+  removeSchedule(index: number): void {
+    this.schedulesForm.update(list => list.filter((_, i) => i !== index));
+  }
+
+  saveSchedules(): void {
+    const payload = this.schedulesForm()
+      .filter(s => s.name.trim() && s.startTime && s.endTime)
+      .map(s => ({
+        name: s.name.trim(),
+        startTime: `${String(s.startTime!.getHours()).padStart(2, '0')}:${String(s.startTime!.getMinutes()).padStart(2, '0')}`,
+        endTime: `${String(s.endTime!.getHours()).padStart(2, '0')}:${String(s.endTime!.getMinutes()).padStart(2, '0')}`
+      }));
+
+    this.schedulesSaving.set(true);
+    this.clinicService.assignSchedules(this.clinicId, payload).subscribe({
+      next: (res) => {
+        this.schedulesSaving.set(false);
+        if (res.isSuccess) {
+          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم تحديث أوقات الدوام.' });
+          this.schedulesDialog.set(false);
+          this.loadClinic();
+        }
+      },
+      error: (err) => {
+        this.schedulesSaving.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'خطأ',
+          detail: err?.error?.error?.message ?? 'تعذّر تحديث أوقات الدوام.'
         });
       }
     });
