@@ -54,6 +54,22 @@ export class PatientToothChart implements OnInit {
   activeCases = signal<{ label: string; value: string }[]>([]);
   treatments = signal<any[]>([]);
 
+  // نوع الأسنان المعروضة
+  toothType = signal<'permanent' | 'primary'>('permanent');
+
+  // ترتيب عرض الأسنان: الأيمن على اليسار والعكس (FDI)
+  // دائم
+  displayUpperRightPermanent = [18, 17, 16, 15, 14, 13, 12, 11];
+  displayUpperLeftPermanent  = [21, 22, 23, 24, 25, 26, 27, 28];
+  displayLowerRightPermanent = [48, 47, 46, 45, 44, 43, 42, 41];
+  displayLowerLeftPermanent  = [31, 32, 33, 34, 35, 36, 37, 38];
+
+  // لبني
+  displayUpperRightPrimary = [55, 54, 53, 52, 51];
+  displayUpperLeftPrimary  = [61, 62, 63, 64, 65];
+  displayLowerRightPrimary = [85, 84, 83, 82, 81];
+  displayLowerLeftPrimary  = [71, 72, 73, 74, 75];
+
   materialOptions = computed(() =>
     this.materials().map(m => ({ label: m.nameAr, value: m.name }))
   );
@@ -61,11 +77,6 @@ export class PatientToothChart implements OnInit {
   treatmentOptions = computed(() =>
     this.treatments().map(t => ({ label: t.nameAr, value: t.id }))
   );
-
-  upperRight = FDI_UPPER_RIGHT;
-  upperLeft = FDI_UPPER_LEFT;
-  lowerRight = FDI_LOWER_RIGHT;
-  lowerLeft = FDI_LOWER_LEFT;
 
   statusDialog = signal(false);
   statusSaving = signal(false);
@@ -97,18 +108,35 @@ export class PatientToothChart implements OnInit {
     notes: ''
   };
 
-  // القائمة المحدثة مع الألوان
-  statusOptions = [
+   // حالات الأسنان الدائمة
+   permanentStatusOptions = [
     { label: 'سليم', value: 1, color: getToothStatusColor(1), borderColor: getToothStatusBorderColor(1) },
-    { label: 'مفقود', value: 2, color: getToothStatusColor(2), borderColor: getToothStatusBorderColor(2) },
-    { label: 'مخلوع', value: 3, color: getToothStatusColor(3), borderColor: getToothStatusBorderColor(3) },
-    { label: 'مدفون', value: 4, color: getToothStatusColor(4), borderColor: getToothStatusBorderColor(4) },
-    { label: 'غير بازغ', value: 5, color: getToothStatusColor(5), borderColor: getToothStatusBorderColor(5) },
-    { label: 'تاج', value: 6, color: getToothStatusColor(6), borderColor: getToothStatusBorderColor(6) },
-    { label: 'جسر', value: 7, color: getToothStatusColor(7), borderColor: getToothStatusBorderColor(7) },
-    { label: 'زرع', value: 8, color: getToothStatusColor(8), borderColor: getToothStatusBorderColor(8) },
-    { label: 'لبني', value: 9, color: getToothStatusColor(9), borderColor: getToothStatusBorderColor(9) },
+    { label: 'بحاجة علاج', value: 10, color: getToothStatusColor(10), borderColor: getToothStatusBorderColor(10) },
+    { label: 'ترميم مع جذور حية', value: 11, color: getToothStatusColor(11), borderColor: getToothStatusBorderColor(11) },
+    { label: 'معالج الجذور مع تاج', value: 12, color: getToothStatusColor(12), borderColor: getToothStatusBorderColor(12) },
+    { label: 'معالج الجذور بدون تاج', value: 13, color: getToothStatusColor(13), borderColor: getToothStatusBorderColor(13) },
+    { label: 'دمية', value: 14, color: getToothStatusColor(14), borderColor: getToothStatusBorderColor(14) },
+    { label: 'غير موجود', value: 2, color: getToothStatusColor(2), borderColor: getToothStatusBorderColor(2) },
+    { label: 'منطمر', value: 4, color: getToothStatusColor(4), borderColor: getToothStatusBorderColor(4) },
+    { label: 'زرعة', value: 8, color: getToothStatusColor(8), borderColor: getToothStatusBorderColor(8) },
   ];
+
+  // حالات الأسنان اللبنية
+  primaryStatusOptions = [
+    { label: 'سليم', value: 1, color: getToothStatusColor(1), borderColor: getToothStatusBorderColor(1) },
+    { label: 'بحاجة علاج', value: 10, color: getToothStatusColor(10), borderColor: getToothStatusBorderColor(10) },
+    { label: 'معالج بدون تاج', value: 16, color: getToothStatusColor(16), borderColor: getToothStatusBorderColor(16) },
+    { label: 'معالج مع تاج', value: 17, color: getToothStatusColor(17), borderColor: getToothStatusBorderColor(17) },
+    { label: 'غير بازغ', value: 15, color: getToothStatusColor(15), borderColor: getToothStatusBorderColor(15) },
+    { label: 'غير موجود', value: 2, color: getToothStatusColor(2), borderColor: getToothStatusBorderColor(2) },
+  ];
+
+  // القائمة المختارة حسب نوع السن الحالي
+  currentStatusOptions = computed(() => {
+    return this.toothType() === 'permanent' 
+      ? this.permanentStatusOptions 
+      : this.primaryStatusOptions;
+  });
 
   mobilityOptions = [
     { label: 'ثابت', value: 0 },
@@ -128,6 +156,12 @@ export class PatientToothChart implements OnInit {
     this.loadMaterials();
     this.loadActiveCases();
     this.loadTreatments();
+  }
+
+  setToothType(type: 'permanent' | 'primary'): void {
+    this.toothType.set(type);
+    // إغلاق الدرج عند التبديل لتجنب عرض سن غير موجود
+    this.closeDrawer();
   }
 
   allTreatments = signal<any[]>([]);

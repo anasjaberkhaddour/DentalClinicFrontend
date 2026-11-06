@@ -12,7 +12,7 @@ import { Header } from '../../shared/components/header/header';
       <app-sidebar class="h-full flex-shrink-0" />
       <div class="flex-1 flex flex-col min-w-0">
         <app-header />
-        <main class="flex-1 overflow-y-auto p-6">
+        <main class="flex-1 overflow-y-auto p-3">
           <router-outlet />
         </main>
       </div>

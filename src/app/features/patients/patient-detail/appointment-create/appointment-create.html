@@ -17,7 +17,7 @@
         </label>
         <p-select [(ngModel)]="form.clinicId" (onChange)="onClinicChange()"
                   [options]="clinics()" optionLabel="label" optionValue="value"
-                  placeholder="اختر العيادة" styleClass="w-full" />
+                  placeholder="اختر العيادة" styleClass="w-full" appendTo="body" />
       </div>
     
       <!-- التاريخ -->
@@ -32,35 +32,47 @@
     <!-- المواعيد المتاحة -->
     @if (form.clinicId && form.date) {
       <div class="border-t border-slate-100 pt-4">
-        <label class="block text-sm font-semibold text-slate-700 mb-3">الأوقات المتاحة <span class="text-red-500">*</span></label>
+        <div class="flex items-center justify-between mb-3">
+          <label class="block text-sm font-semibold text-slate-700">
+            الأوقات المتاحة <span class="text-red-500">*</span>
+          </label>
+          @if (form.times.length > 0) {
+            <span class="text-xs px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 font-bold">
+              {{ form.times.length }} مختار
+            </span>
+          }
+        </div>
         
         @if (isLoadingSlots()) {
           <div class="flex items-center gap-2 text-slate-500 text-sm">
             <i class="pi pi-spin pi-spinner"></i> جاري جلب الأوقات...
           </div>
-        } @else if (availableSlots().length === 0) {
+        } @else if (visibleSlots().length === 0) {
           <div class="p-4 rounded-xl bg-amber-50 text-amber-700 text-sm border border-amber-100">
-            <i class="pi pi-info-circle"></i> لا توجد أوقات متاحة في هذا اليوم (قد يكون إجازة أو لا توجد أوقات دوام مسجلة).
+            <i class="pi pi-info-circle"></i> لا توجد أوقات متاحة في هذا اليوم (قد يكون إجازة أو لا توجد أوقات دوام مسجلة أو مضى وقتها).
           </div>
         } @else {
           <div class="grid grid-cols-3 md:grid-cols-5 gap-2">
-            @for (slot of availableSlots(); track slot.label) {
+            @for (slot of visibleSlots(); track slot.label) {
               <button 
                 type="button"
-                class="py-2 px-1 rounded-lg border text-sm font-semibold transition-colors"
-                [class.bg-primary-600]="form.time?.getTime() === slot.time.getTime()"
-                [class.text-white]="form.time?.getTime() === slot.time.getTime()"
-                [class.border-primary-600]="form.time?.getTime() === slot.time.getTime()"
-                [class.bg-slate-50]="!slot.isBooked && form.time?.getTime() !== slot.time.getTime()"
-                [class.text-slate-600]="!slot.isBooked && form.time?.getTime() !== slot.time.getTime()"
-                [class.border-slate-200]="!slot.isBooked && form.time?.getTime() !== slot.time.getTime()"
+                class="py-2 px-1 rounded-lg border text-sm font-semibold transition-colors relative"
+                [class.bg-primary-600]="isSlotSelected(slot.time)"
+                [class.text-white]="isSlotSelected(slot.time)"
+                [class.border-primary-600]="isSlotSelected(slot.time)"
+                [class.bg-slate-50]="!slot.isBooked && !isSlotSelected(slot.time)"
+                [class.text-slate-600]="!slot.isBooked && !isSlotSelected(slot.time)"
+                [class.border-slate-200]="!slot.isBooked && !isSlotSelected(slot.time)"
                 [class.bg-red-50]="slot.isBooked"
                 [class.text-red-400]="slot.isBooked"
                 [class.border-red-100]="slot.isBooked"
                 [class.line-through]="slot.isBooked"
                 [disabled]="slot.isBooked"
-                (click)="selectSlot(slot.time)">
+                (click)="toggleSlot(slot.time, slot.isBooked, slot.isPast)">
                 {{ slot.label }}
+                @if (isSlotSelected(slot.time)) {
+                  <i class="pi pi-check text-[10px] absolute top-1 left-1"></i>
+                }
               </button>
             }
           </div>
@@ -82,7 +94,13 @@
 
   <div class="sticky bottom-4 bg-white rounded-2xl shadow-lg border border-slate-200 p-4 flex items-center justify-end gap-2">
     <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="cancel()"></button>
-    <button pButton type="button" label="حجز الموعد" icon="pi pi-check" [loading]="saving()" [disabled]="!form.time" (click)="save()"></button>
+    <button pButton
+      type="button"
+      [label]="form.times.length > 1 ? 'حجز ' + form.times.length + ' مواعيد' : 'حجز الموعد'"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="form.times.length === 0"
+      (click)="save()"></button>
   </div>
 
 </div>

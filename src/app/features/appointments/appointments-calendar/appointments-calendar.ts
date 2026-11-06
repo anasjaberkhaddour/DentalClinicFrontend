@@ -12,6 +12,8 @@ import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageService } from 'primeng/api';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { AppointmentService } from '../../../core/services/appointment.service';
 import { ClinicService } from '../../../core/services/clinic.service';
 import { PatientService } from '../../../core/services/patient.service';
@@ -42,20 +44,27 @@ export class AppointmentsCalendar implements OnInit {
   dayAddDate = signal<Date | null>(null);
   dayAddSaving = signal(false);
 
+  quickPatientDialog = signal(false);
+  quickPatientSaving = signal(false);
+  quickPatientForm = { firstName: '', lastName: '' };
+
   patientSearch = signal('');
   patientResults = signal<any[]>([]);
   patientSearching = signal(false);
+  patientDropdownOpen = signal(false);
   selectedPatient = signal<any | null>(null);
 
   apptForm = {
-    time: '09:00',
+    times: [] as string[],
     clinicId: '',
     reason: '',
     notes: ''
   };
 
-  availableSlots = signal<{ label: string; isBooked: boolean }[]>([]);
+  availableSlots = signal<{ label: string; isBooked: boolean; isPast: boolean }[]>([]);
   isLoadingSlots = signal(false);
+
+  visibleSlots = computed(() => this.availableSlots().filter(s => !s.isPast));
 
   clinicOptionsForForm = computed(() =>
     this.clinics().filter(c => c.value !== null)
@@ -98,8 +107,8 @@ export class AppointmentsCalendar implements OnInit {
         if (res.isSuccess) {
           const options: { label: string; value: string | null; schedules: any[]; appointmentDurationMinutes: number }[] =
             [{ label: 'كل العيادات', value: null, schedules: [], appointmentDurationMinutes: 30 }];
-          res.value.forEach((c: any) => options.push({ 
-            label: c.name, 
+          res.value.forEach((c: any) => options.push({
+            label: c.name,
             value: c.id,
             schedules: c.schedules || [],
             appointmentDurationMinutes: c.appointmentDurationMinutes || 30
@@ -123,10 +132,7 @@ export class AppointmentsCalendar implements OnInit {
       next: (res) => {
         if (res.isSuccess) {
           const events = this.mapToEvents(res.value.items);
-          this.calendarOptions = {
-            ...this.calendarOptions,
-            events: events
-          };
+          this.calendarOptions = { ...this.calendarOptions, events };
         }
         this.loading.set(false);
       },
@@ -180,12 +186,12 @@ export class AppointmentsCalendar implements OnInit {
     today.setHours(0, 0, 0, 0);
     const cellDate = new Date(info.date);
     cellDate.setHours(0, 0, 0, 0);
-  
+
     if (cellDate < today) return;
-  
+
     const cell = info.el as HTMLElement;
     cell.classList.add('fc-day-with-add');
-  
+
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'day-add-btn';
@@ -195,7 +201,7 @@ export class AppointmentsCalendar implements OnInit {
       e.stopPropagation();
       this.onDayAdd(info.date);
     });
-  
+
     cell.appendChild(addBtn);
   }
 
@@ -204,18 +210,19 @@ export class AppointmentsCalendar implements OnInit {
     this.selectedPatient.set(null);
     this.patientSearch.set('');
     this.patientResults.set([]);
+    this.patientDropdownOpen.set(false);
 
     const defaultClinic = this.selectedClinic()
       ?? this.clinicOptionsForForm()[0]?.value
       ?? '';
 
     this.apptForm = {
-      time: '',
+      times: [],
       clinicId: defaultClinic,
       reason: '',
       notes: ''
     };
-    
+
     this.availableSlots.set([]);
     this.dayAddDialog.set(true);
 
@@ -227,7 +234,7 @@ export class AppointmentsCalendar implements OnInit {
   onClinicChangeDialog(): void {
     const clinicId = this.apptForm.clinicId;
     const date = this.dayAddDate();
-    this.apptForm.time = '';
+    this.apptForm.times = [];
     this.availableSlots.set([]);
 
     if (!clinicId || !date) return;
@@ -254,7 +261,9 @@ export class AppointmentsCalendar implements OnInit {
     }).subscribe({
       next: (res) => {
         const bookedAppointments = res.isSuccess ? res.value.items : [];
-        const slots: { label: string; isBooked: boolean }[] = [];
+        const slots: { label: string; isBooked: boolean; isPast: boolean }[] = [];
+
+        const now = new Date();
 
         selectedClinic.schedules.forEach((schedule: any) => {
           const [startH, startM] = schedule.startTime.split(':').map(Number);
@@ -268,17 +277,18 @@ export class AppointmentsCalendar implements OnInit {
 
           while (current < end) {
             const slotTime = new Date(current);
-            
+            const slotEnd = new Date(slotTime.getTime() + duration * 60000);
+
             const isBooked = bookedAppointments.some((apt: any) => {
               const aptStart = new Date(apt.scheduledAt);
               const aptEnd = new Date(aptStart.getTime() + apt.durationMinutes * 60000);
-              const slotEnd = new Date(slotTime.getTime() + duration * 60000);
-              
               return slotTime < aptEnd && slotEnd > aptStart;
             });
 
+            const isPast = slotTime.getTime() <= now.getTime();
+
             const timeString = slotTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-            slots.push({ label: timeString, isBooked });
+            slots.push({ label: timeString, isBooked, isPast });
 
             current.setMinutes(current.getMinutes() + duration);
           }
@@ -293,13 +303,29 @@ export class AppointmentsCalendar implements OnInit {
     });
   }
 
+  toggleTimeSlot(label: string, isBooked: boolean, isPast: boolean): void {
+    if (isBooked || isPast) return;
+    const current = this.apptForm.times;
+    if (current.includes(label)) {
+      this.apptForm.times = current.filter(t => t !== label);
+    } else {
+      this.apptForm.times = [...current, label];
+    }
+  }
+
+  isSlotSelected(label: string): boolean {
+    return this.apptForm.times.includes(label);
+  }
+
   searchPatients(): void {
     const q = this.patientSearch().trim();
     if (q.length < 2) {
       this.patientResults.set([]);
+      this.patientDropdownOpen.set(false);
       return;
     }
 
+    this.patientDropdownOpen.set(true);
     this.patientSearching.set(true);
     this.patientService.getAll({ search: q, page: 1, pageSize: 10 }).subscribe({
       next: (res) => {
@@ -313,7 +339,66 @@ export class AppointmentsCalendar implements OnInit {
   selectPatient(p: any): void {
     this.selectedPatient.set(p);
     this.patientResults.set([]);
+    this.patientDropdownOpen.set(false);
     this.patientSearch.set(`${p.firstName} ${p.lastName}`);
+  }
+
+  openQuickPatientDialog(): void {
+    const q = this.patientSearch().trim();
+    if (q) {
+      const parts = q.split(/\s+/);
+      this.quickPatientForm.firstName = parts[0] ?? '';
+      this.quickPatientForm.lastName = parts.slice(1).join(' ') ?? '';
+    } else {
+      this.quickPatientForm = { firstName: '', lastName: '' };
+    }
+    this.quickPatientDialog.set(true);
+  }
+
+  saveQuickPatient(): void {
+    const { firstName, lastName } = this.quickPatientForm;
+
+    if (!firstName.trim() || !lastName.trim()) {
+      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'الاسم الأول والكنية مطلوبان.' });
+      return;
+    }
+
+    if (!this.apptForm.clinicId) {
+      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر العيادة أولاً.' });
+      return;
+    }
+
+    this.quickPatientSaving.set(true);
+    this.patientService.create({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      nationalId: undefined,
+      isEmergency: false,
+      registrationClinicId: this.apptForm.clinicId
+    }).subscribe({
+      next: (res) => {
+        this.quickPatientSaving.set(false);
+        if (res.isSuccess) {
+          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم إضافة المريض.' });
+          this.quickPatientDialog.set(false);
+
+          const newPatient = {
+            id: res.value,
+            firstName: firstName.trim(),
+            lastName: lastName.trim()
+          };
+          this.selectPatient(newPatient);
+        }
+      },
+      error: (err) => {
+        this.quickPatientSaving.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'خطأ',
+          detail: err?.error?.error?.message ?? 'تعذّر إضافة المريض.'
+        });
+      }
+    });
   }
 
   saveDayAppointment(): void {
@@ -328,14 +413,10 @@ export class AppointmentsCalendar implements OnInit {
       this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر العيادة.' });
       return;
     }
-    if (!this.apptForm.time) {
-      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر وقت الموعد.' });
+    if (!this.apptForm.times || this.apptForm.times.length === 0) {
+      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر وقتاً واحداً على الأقل.' });
       return;
     }
-
-    const [hours, minutes] = this.apptForm.time.split(':').map(Number);
-    const scheduledAt = new Date(date);
-    scheduledAt.setHours(hours, minutes, 0, 0);
 
     const userId = this.getCurrentUserId();
     if (!userId) {
@@ -345,31 +426,61 @@ export class AppointmentsCalendar implements OnInit {
 
     const duration = this.clinics().find(c => c.value === this.apptForm.clinicId)?.appointmentDurationMinutes || 30;
 
+    const requests = this.apptForm.times.map(timeLabel => {
+      const [hours, minutes] = timeLabel.split(':').map(Number);
+      const scheduledAt = new Date(date);
+      scheduledAt.setHours(hours, minutes, 0, 0);
+
+      return this.appointmentService.create({
+        patientId: patient.id,
+        clinicId: this.apptForm.clinicId,
+        doctorId: userId,
+        scheduledAt: scheduledAt.toISOString(),
+        durationMinutes: duration,
+        reason: this.apptForm.reason,
+        notes: this.apptForm.notes
+      }).pipe(
+        catchError(err => of({ isSuccess: false, error: err, time: timeLabel } as any))
+      );
+    });
+
     this.dayAddSaving.set(true);
-    this.appointmentService.create({
-      patientId: patient.id,
-      clinicId: this.apptForm.clinicId,
-      doctorId: userId,
-      scheduledAt: scheduledAt.toISOString(),
-      durationMinutes: duration,
-      reason: this.apptForm.reason,
-      notes: this.apptForm.notes
-    }).subscribe({
-      next: (res) => {
+
+    forkJoin(requests).subscribe({
+      next: (results) => {
         this.dayAddSaving.set(false);
-        if (res.isSuccess) {
-          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم إنشاء الموعد.' });
+
+        const succeeded = results.filter((r: any) => r.isSuccess).length;
+        const failed = results.length - succeeded;
+
+        if (failed === 0) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'تم',
+            detail: `تم إنشاء ${succeeded} موعد بنجاح.`
+          });
           this.dayAddDialog.set(false);
           this.loadAppointments();
+        } else if (succeeded === 0) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'فشل',
+            detail: 'لم يتم إنشاء أي موعد. تحقق من الأوقات أو الاتصال.'
+          });
+          this.loadAppointments();
+        } else {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'نجاح جزئي',
+            detail: `تم إنشاء ${succeeded} موعد، وفشل ${failed}.`
+          });
+          this.loadAppointments();
+          this.apptForm.times = [];
         }
       },
-      error: (err) => {
+      error: () => {
         this.dayAddSaving.set(false);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'خطأ',
-          detail: err?.error?.error?.message ?? 'تعذّر إنشاء الموعد.'
-        });
+        this.messageService.add({ severity: 'error', summary: 'خطأ', detail: 'تعذّر حفظ المواعيد.' });
       }
     });
   }

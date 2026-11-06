@@ -69,7 +69,6 @@
 
       <div class="space-y-4 py-2">
 
-        <!-- Date display -->
         @if (dayAddDate(); as date) {
           <div class="p-3 rounded-xl bg-primary-50 border border-primary-100 flex items-center gap-2">
             <i class="pi pi-calendar text-primary-600"></i>
@@ -92,18 +91,33 @@
                 placeholder="ابحث..."
                 class="w-full !pr-10" />
             </div>
-            @if (patientResults().length > 0) {
-              <div class="mt-1 max-h-40 overflow-y-auto border border-slate-200 rounded-lg absolute z-50 bg-white w-[calc(50%-8px)] shadow-lg">
-                @for (p of patientResults(); track p.id) {
-                  <button
-                    type="button"
-                    class="w-full text-right px-3 py-2 hover:bg-primary-50 transition-colors border-b border-slate-100 last:border-0 flex items-center gap-3"
-                    (click)="selectPatient(p)">
-                    <div class="flex-1 min-w-0">
-                      <div class="font-semibold text-slate-700 text-sm">{{ p.firstName }} {{ p.lastName }}</div>
-                    </div>
-                  </button>
+            @if (patientDropdownOpen() && patientSearch().trim().length >= 2) {
+              <div class="mt-1 max-h-52 overflow-y-auto border border-slate-200 rounded-lg absolute z-50 bg-white w-[calc(50%-8px)] shadow-lg">
+                @if (patientResults().length > 0) {
+                  @for (p of patientResults(); track p.id) {
+                    <button
+                      type="button"
+                      class="w-full text-right px-3 py-2 hover:bg-primary-50 transition-colors border-b border-slate-100 flex items-center gap-3"
+                      (click)="selectPatient(p)">
+                      <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-slate-700 text-sm">{{ p.firstName }} {{ p.lastName }}</div>
+                      </div>
+                    </button>
+                  }
+                } @else if (!patientSearching()) {
+                  <div class="p-3 text-center text-sm text-slate-500">لا توجد نتائج مطابقة</div>
                 }
+
+                <button
+                  type="button"
+                  class="w-full text-right px-3 py-3 hover:bg-emerald-50 transition-colors flex items-center gap-2 text-emerald-700 border-t-2 border-dashed border-slate-200"
+                  (click)="openQuickPatientDialog()">
+                  <i class="pi pi-user-plus text-emerald-600"></i>
+                  <div class="flex-1">
+                    <div class="font-semibold text-sm">إضافة مريض جديد</div>
+                    <div class="text-xs text-slate-500 truncate">"{{ patientSearch() }}"</div>
+                  </div>
+                </button>
               </div>
             }
             @if (selectedPatient(); as p) {
@@ -123,41 +137,56 @@
               optionLabel="label"
               optionValue="value"
               placeholder="اختر العيادة"
-              styleClass="w-full" 
+              styleClass="w-full"
               appendTo="body" />
           </div>
         </div>
 
-        <!-- Available Slots -->
+        <!-- Available Slots (Multi-select) -->
         @if (apptForm.clinicId) {
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">الوقت <span class="text-red-500">*</span></label>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-sm font-semibold text-slate-700">
+                الأوقات <span class="text-red-500">*</span>
+              </label>
+              @if (apptForm.times.length > 0) {
+                <span class="text-xs px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 font-bold">
+                  {{ apptForm.times.length }} مختار
+                </span>
+              }
+            </div>
+
             @if (isLoadingSlots()) {
               <div class="text-sm text-slate-500"><i class="pi pi-spin pi-spinner"></i> جاري جلب الأوقات...</div>
-            } @else if (availableSlots().length === 0) {
-              <div class="text-sm text-amber-600 bg-amber-50 p-2 rounded-lg">لا توجد أوقات متاحة.</div>
             } @else {
-              <div class="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1">
-                @for (slot of availableSlots(); track slot.label) {
-                  <button 
-                    type="button"
-                    class="py-1.5 px-1 rounded-lg border text-xs font-semibold transition-colors"
-                    [class.bg-primary-600]="apptForm.time === slot.label"
-                    [class.text-white]="apptForm.time === slot.label"
-                    [class.border-primary-600]="apptForm.time === slot.label"
-                    [class.bg-slate-50]="!slot.isBooked && apptForm.time !== slot.label"
-                    [class.text-slate-600]="!slot.isBooked && apptForm.time !== slot.label"
-                    [class.border-slate-200]="!slot.isBooked && apptForm.time !== slot.label"
-                    [class.bg-red-50]="slot.isBooked"
-                    [class.text-red-400]="slot.isBooked"
-                    [class.border-red-100]="slot.isBooked"
-                    [class.line-through]="slot.isBooked"
-                    [disabled]="slot.isBooked"
-                    (click)="apptForm.time = slot.label">
-                    {{ slot.label }}
-                  </button>
-                }
-              </div>
+              @if (visibleSlots().length === 0) {
+                <div class="text-sm text-amber-600 bg-amber-50 p-2 rounded-lg">لا توجد أوقات متاحة.</div>
+              } @else {
+                <div class="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
+                  @for (slot of visibleSlots(); track slot.label) {
+                    <button
+                      type="button"
+                      class="py-1.5 px-1 rounded-lg border text-xs font-semibold transition-colors relative"
+                      [class.bg-primary-600]="isSlotSelected(slot.label)"
+                      [class.text-white]="isSlotSelected(slot.label)"
+                      [class.border-primary-600]="isSlotSelected(slot.label)"
+                      [class.bg-slate-50]="!slot.isBooked && !isSlotSelected(slot.label)"
+                      [class.text-slate-600]="!slot.isBooked && !isSlotSelected(slot.label)"
+                      [class.border-slate-200]="!slot.isBooked && !isSlotSelected(slot.label)"
+                      [class.bg-red-50]="slot.isBooked"
+                      [class.text-red-400]="slot.isBooked"
+                      [class.border-red-100]="slot.isBooked"
+                      [class.line-through]="slot.isBooked"
+                      [disabled]="slot.isBooked"
+                      (click)="toggleTimeSlot(slot.label, slot.isBooked, slot.isPast)">
+                      {{ slot.label }}
+                      @if (isSlotSelected(slot.label)) {
+                        <i class="pi pi-check text-[10px] absolute top-0.5 left-0.5"></i>
+                      }
+                    </button>
+                  }
+                </div>
+              }
             }
           </div>
         }
@@ -171,7 +200,79 @@
 
       <ng-template pTemplate="footer">
         <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="dayAddDialog.set(false)"></button>
-        <button pButton type="button" label="حجز الموعد" icon="pi pi-check" [loading]="dayAddSaving()" (click)="saveDayAppointment()"></button>
+        <button pButton
+          type="button"
+          [label]="apptForm.times.length > 1 ? 'حجز ' + apptForm.times.length + ' مواعيد' : 'حجز الموعد'"
+          icon="pi pi-check"
+          [loading]="dayAddSaving()"
+          (click)="saveDayAppointment()"></button>
       </ng-template>
     </p-dialog>
+
+    <!-- Quick Patient Dialog -->
+    <p-dialog
+      [visible]="quickPatientDialog()"
+      (visibleChange)="quickPatientDialog.set($event)"
+      header="إضافة مريض جديد"
+      [modal]="true"
+      [style]="{ width: '420px' }"
+      appendTo="body">
+
+      <div class="space-y-4 py-2">
+        <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100 flex items-start gap-2">
+          <i class="pi pi-info-circle text-emerald-600 mt-0.5"></i>
+          <p class="text-sm text-emerald-700">
+            سيتم إنشاء ملف للمريض باسمه فقط. يمكنك إكمال بياناته لاحقاً من صفحته.
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">الاسم الأول <span class="text-red-500">*</span></label>
+          <input pInputText [(ngModel)]="quickPatientForm.firstName" class="w-full" placeholder="مثال: أحمد" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">الكنية <span class="text-red-500">*</span></label>
+          <input pInputText [(ngModel)]="quickPatientForm.lastName" class="w-full" placeholder="مثال: الحلبي" />
+        </div>
+      </div>
+
+      <ng-template pTemplate="footer">
+        <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="quickPatientDialog.set(false)"></button>
+        <button pButton type="button" label="إضافة وتعيين" icon="pi pi-user-plus" [loading]="quickPatientSaving()" (click)="saveQuickPatient()"></button>
+      </ng-template>
+    </p-dialog>
+        <!-- Quick Patient Dialog -->
+        <p-dialog
+        [visible]="quickPatientDialog()"
+        (visibleChange)="quickPatientDialog.set($event)"
+        header="إضافة مريض جديد"
+        [modal]="true"
+        [style]="{ width: '420px' }"
+        appendTo="body">
+  
+        <div class="space-y-4 py-2">
+          <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100 flex items-start gap-2">
+            <i class="pi pi-info-circle text-emerald-600 mt-0.5"></i>
+            <p class="text-sm text-emerald-700">
+              سيتم إنشاء ملف للمريض باسمه فقط. يمكنك إكمال بياناته لاحقاً من صفحته.
+            </p>
+          </div>
+  
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">الاسم الأول <span class="text-red-500">*</span></label>
+            <input pInputText [(ngModel)]="quickPatientForm.firstName" class="w-full" placeholder="مثال: أحمد" />
+          </div>
+  
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">الكنية <span class="text-red-500">*</span></label>
+            <input pInputText [(ngModel)]="quickPatientForm.lastName" class="w-full" placeholder="مثال: الحلبي" />
+          </div>
+        </div>
+  
+        <ng-template pTemplate="footer">
+          <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="quickPatientDialog.set(false)"></button>
+          <button pButton type="button" label="إضافة وتعيين" icon="pi pi-user-plus" [loading]="quickPatientSaving()" (click)="saveQuickPatient()"></button>
+        </ng-template>
+      </p-dialog>
   </div>

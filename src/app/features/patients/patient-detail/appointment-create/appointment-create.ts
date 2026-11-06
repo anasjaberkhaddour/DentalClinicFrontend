@@ -9,6 +9,8 @@ import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { MessageService } from 'primeng/api';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { AppointmentService, CreateAppointmentRequest } from '../../../../core/services/appointment.service';
 import { ClinicService } from '../../../../core/services/clinic.service';
 import { TokenStorageService } from '../../../../core/services/token-storage.service';
@@ -42,14 +44,15 @@ export class AppointmentCreate implements OnInit {
     clinicId: '',
     doctorId: '',
     date: null as Date | null,
-    time: null as Date | null,
-    //durationMinutes: 30,
+    times: [] as Date[],
     reason: '',
     notes: ''
   };
 
-  availableSlots = signal<{ time: Date; label: string; isBooked: boolean }[]>([]);
+  availableSlots = signal<{ time: Date; label: string; isBooked: boolean; isPast: boolean }[]>([]);
   isLoadingSlots = signal(false);
+
+  visibleSlots = computed(() => this.availableSlots().filter(s => !s.isPast));
 
   ngOnInit(): void {
     this.patientId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -66,13 +69,13 @@ export class AppointmentCreate implements OnInit {
     this.clinicService.getAll().subscribe({
       next: (response) => {
         if (response.isSuccess) {
-          this.clinics.set(response.value.map((c: any) => ({ 
-            label: c.name, 
+          this.clinics.set(response.value.map((c: any) => ({
+            label: c.name,
             value: c.id,
             schedules: c.schedules || [],
             appointmentDurationMinutes: c.appointmentDurationMinutes || 30
           })));
-          
+
           if (this.clinics().length === 1) {
             this.form.clinicId = this.clinics()[0].value;
           }
@@ -89,81 +92,93 @@ export class AppointmentCreate implements OnInit {
     this.generateSlots();
   }
 
- 
   generateSlots(): void {
-      const clinicId = this.form.clinicId;
-      const date = this.form.date;
-      
-      this.form.time = null;
-      this.availableSlots.set([]);
-    
-      if (!clinicId || !date) return;
-    
-      const selectedClinic = this.clinics().find(c => c.value === clinicId);
-      if (!selectedClinic || !selectedClinic.schedules || selectedClinic.schedules.length === 0) {
-        this.messageService.add({ severity: 'info', summary: 'تنبيه', detail: 'لا توجد أوقات دوام محددة لهذه العيادة.' });
-        return;
-      }
-    
-      const duration = selectedClinic.appointmentDurationMinutes || 30;
-      this.isLoadingSlots.set(true);
-    
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
-    
-      this.appointmentService.getAll({
-        clinicId,
-        dateFrom: startOfDay.toISOString(),
-        dateTo: endOfDay.toISOString(),
-        page: 1,
-        pageSize: 100
-      }).subscribe({
-        next: (res) => {
-          const bookedAppointments = res.isSuccess ? res.value.items : [];
-          const slots: { time: Date; label: string; isBooked: boolean }[] = [];
-    
-          selectedClinic.schedules.forEach((schedule: any) => {
-            const [startH, startM] = schedule.startTime.split(':').map(Number);
-            const [endH, endM] = schedule.endTime.split(':').map(Number);
-    
-            let current = new Date(date);
-            current.setHours(startH, startM, 0, 0);
-    
-            const end = new Date(date);
-            end.setHours(endH, endM, 0, 0);
-    
-            while (current < end) {
-              const slotTime = new Date(current);
-              
-              const isBooked = bookedAppointments.some((apt: any) => {
-                const aptStart = new Date(apt.scheduledAt);
-                const aptEnd = new Date(aptStart.getTime() + apt.durationMinutes * 60000);
-                const slotEnd = new Date(slotTime.getTime() + duration * 60000);
-                
-                return slotTime < aptEnd && slotEnd > aptStart;
-              });
-    
-              const timeString = slotTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-              slots.push({ time: slotTime, label: timeString, isBooked });
-    
-              current.setMinutes(current.getMinutes() + duration);
-            }
-          });
-    
-          this.availableSlots.set(slots);
-          this.isLoadingSlots.set(false);
-        },
-        error: () => {
-          this.isLoadingSlots.set(false);
-          this.messageService.add({ severity: 'error', summary: 'خطأ', detail: 'تعذّر جلب المواعيد المحجوزة.' });
-        }
-      });
+    const clinicId = this.form.clinicId;
+    const date = this.form.date;
+
+    this.form.times = [];
+    this.availableSlots.set([]);
+
+    if (!clinicId || !date) return;
+
+    const selectedClinic = this.clinics().find(c => c.value === clinicId);
+    if (!selectedClinic || !selectedClinic.schedules || selectedClinic.schedules.length === 0) {
+      this.messageService.add({ severity: 'info', summary: 'تنبيه', detail: 'لا توجد أوقات دوام محددة لهذه العيادة.' });
+      return;
     }
 
-  selectSlot(time: Date): void {
-    this.form.time = time;
+    const duration = selectedClinic.appointmentDurationMinutes || 30;
+    this.isLoadingSlots.set(true);
+
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    this.appointmentService.getAll({
+      clinicId,
+      dateFrom: startOfDay.toISOString(),
+      dateTo: endOfDay.toISOString(),
+      page: 1,
+      pageSize: 100
+    }).subscribe({
+      next: (res) => {
+        const bookedAppointments = res.isSuccess ? res.value.items : [];
+        const slots: { time: Date; label: string; isBooked: boolean; isPast: boolean }[] = [];
+
+        const now = new Date();
+
+        selectedClinic.schedules.forEach((schedule: any) => {
+          const [startH, startM] = schedule.startTime.split(':').map(Number);
+          const [endH, endM] = schedule.endTime.split(':').map(Number);
+
+          let current = new Date(date);
+          current.setHours(startH, startM, 0, 0);
+
+          const end = new Date(date);
+          end.setHours(endH, endM, 0, 0);
+
+          while (current < end) {
+            const slotTime = new Date(current);
+
+            const isBooked = bookedAppointments.some((apt: any) => {
+              const aptStart = new Date(apt.scheduledAt);
+              const aptEnd = new Date(aptStart.getTime() + apt.durationMinutes * 60000);
+              const slotEnd = new Date(slotTime.getTime() + duration * 60000);
+              return slotTime < aptEnd && slotEnd > aptStart;
+            });
+
+            const isPast = slotTime.getTime() <= now.getTime();
+
+            const timeString = slotTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            slots.push({ time: slotTime, label: timeString, isBooked, isPast });
+
+            current.setMinutes(current.getMinutes() + duration);
+          }
+        });
+
+        this.availableSlots.set(slots);
+        this.isLoadingSlots.set(false);
+      },
+      error: () => {
+        this.isLoadingSlots.set(false);
+        this.messageService.add({ severity: 'error', summary: 'خطأ', detail: 'تعذّر جلب المواعيد المحجوزة.' });
+      }
+    });
+  }
+
+  isSlotSelected(time: Date): boolean {
+    return this.form.times.some(t => t.getTime() === time.getTime());
+  }
+
+  toggleSlot(time: Date, isBooked: boolean, isPast: boolean): void {
+    if (isBooked || isPast) return;
+    const current = this.form.times;
+    if (current.some(t => t.getTime() === time.getTime())) {
+      this.form.times = current.filter(t => t.getTime() !== time.getTime());
+    } else {
+      this.form.times = [...current, time];
+    }
   }
 
   getCurrentUserId(): string {
@@ -182,37 +197,63 @@ export class AppointmentCreate implements OnInit {
       this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر العيادة.' });
       return;
     }
-    if (!this.form.date || !this.form.time) {
-      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر التاريخ والوقت.' });
+    if (!this.form.date || this.form.times.length === 0) {
+      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'اختر التاريخ ووقتاً واحداً على الأقل.' });
       return;
     }
+
     const duration = this.clinics().find(c => c.value === this.form.clinicId)?.appointmentDurationMinutes || 30;
-    const payload: CreateAppointmentRequest = {
-      patientId: this.patientId,
-      clinicId: this.form.clinicId,
-      doctorId: this.form.doctorId,
-      scheduledAt: this.form.time.toISOString(),
-      durationMinutes: duration,
-      reason: this.form.reason,
-      notes: this.form.notes
-    };
+
+    const requests = this.form.times.map(time => {
+      const payload: CreateAppointmentRequest = {
+        patientId: this.patientId,
+        clinicId: this.form.clinicId,
+        doctorId: this.form.doctorId,
+        scheduledAt: time.toISOString(),
+        durationMinutes: duration,
+        reason: this.form.reason,
+        notes: this.form.notes
+      };
+      return this.appointmentService.create(payload).pipe(
+        catchError(err => of({ isSuccess: false, error: err } as any))
+      );
+    });
 
     this.saving.set(true);
-    this.appointmentService.create(payload).subscribe({
-      next: (response) => {
+
+    forkJoin(requests).subscribe({
+      next: (results) => {
         this.saving.set(false);
-        if (response.isSuccess) {
-          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم حجز الموعد.' });
+
+        const succeeded = results.filter((r: any) => r.isSuccess).length;
+        const failed = results.length - succeeded;
+
+        if (failed === 0) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'تم',
+            detail: `تم حجز ${succeeded} موعد بنجاح.`
+          });
           this.router.navigate(['/patients', this.patientId]);
+        } else if (succeeded === 0) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'فشل',
+            detail: 'لم يتم حجز أي موعد.'
+          });
+        } else {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'نجاح جزئي',
+            detail: `تم حجز ${succeeded} موعد، وفشل ${failed}.`
+          });
+          this.form.times = [];
+          this.generateSlots();
         }
       },
-      error: (err) => {
+      error: () => {
         this.saving.set(false);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'خطأ',
-          detail: err?.error?.error?.message ?? 'تعذّر حجز الموعد.'
-        });
+        this.messageService.add({ severity: 'error', summary: 'خطأ', detail: 'تعذّر حجز المواعيد.' });
       }
     });
   }
