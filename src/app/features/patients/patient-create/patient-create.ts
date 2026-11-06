@@ -1,3 +1,4 @@
+// patient-create.ts
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -38,7 +39,10 @@ export class PatientCreate implements OnInit {
   saving = signal(false);
   clinics = signal<{ label: string; value: string }[]>([]);
 
-  // Expose enums to template
+  today = new Date();
+  minBirthDate = new Date(1900, 0, 1);
+  defaultBirthDate = new Date(1990, 0, 1);
+
   ContactTypeOptions = ContactTypeOptions;
   GenderOptions = GenderOptions;
   BloodTypeOptions = BloodTypeOptions;
@@ -120,6 +124,7 @@ export class PatientCreate implements OnInit {
 
     const payload = {
       ...this.form,
+      nationalId: this.form.nationalId.trim() || undefined,
       dateOfBirth: this.form.dateOfBirth || null,
       gender: this.form.gender ?? null,
       bloodType: this.form.bloodType ?? null,

@@ -34,9 +34,8 @@
       <div>
         <label class="block text-sm font-semibold text-slate-700 mb-2">تاريخ الفاتورة</label>
         <p-datepicker
-          [ngModel]="form().invoiceDate"
-          (ngModelChange)="updateForm({ invoiceDate: $event })"
-          dateFormat="dd/mm/yy" styleClass="w-full" appendTo="body" />
+        [(ngModel)]="invoiceDate"
+        dateFormat="dd/mm/yy" styleClass="w-full" appendTo="body" />
       </div>
     </div>
   </div>

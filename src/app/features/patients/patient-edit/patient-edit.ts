@@ -1,3 +1,4 @@
+// patient-edit.ts
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -44,6 +45,10 @@ export class PatientEdit implements OnInit {
   saving = signal(false);
   patientId!: string;
   personId!: string;
+
+  today = new Date();
+  minBirthDate = new Date(1900, 0, 1);
+  defaultBirthDate = new Date(1990, 0, 1);
 
   ContactTypeOptions = ContactTypeOptions;
   GenderOptions = GenderOptions;
@@ -132,6 +137,7 @@ export class PatientEdit implements OnInit {
 
     const payload = {
       ...this.form,
+      nationalId: this.form.nationalId.trim() || undefined,
       dateOfBirth: this.form.dateOfBirth || null,
       gender: this.form.gender ?? null,
       bloodType: this.form.bloodType ?? null
@@ -155,8 +161,6 @@ export class PatientEdit implements OnInit {
       }
     });
   }
-
-  // ============ Contacts ============
 
   addContact(): void {
     if (!this.newContact.value.trim()) {

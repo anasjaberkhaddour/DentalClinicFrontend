@@ -35,7 +35,15 @@ export class PatientInvoices implements OnInit {
     this.loading.set(true);
     this.invoiceService.getByPatient(this.patientId).subscribe({
       next: (response) => {
-        this.invoices.set(response.value.items);
+        const sorted = [...response.value.items].sort((a, b) => {
+          // ترتيب تنازلي حسب تاريخ الإنشاء (الأحدث أولاً)
+          const dateA = new Date(a.invoiceDate).getTime();
+          const dateB = new Date(b.invoiceDate).getTime();
+          if (dateB !== dateA) return dateB - dateA;
+          // عند تساوي التاريخ، نرتب حسب رقم الفاتورة تنازلياً
+          return b.invoiceNumber.localeCompare(a.invoiceNumber);
+        });
+        this.invoices.set(sorted);
         this.loading.set(false);
       },
       error: () => {

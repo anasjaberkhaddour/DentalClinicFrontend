@@ -41,11 +41,14 @@ export class InvoiceCreate implements OnInit {
 
   items = signal<(CreateInvoiceItemRequest & { treatmentId?: string })[]>([]);
 
+  // تاريخ الفاتورة الافتراضي = اليوم
+  invoiceDate: Date = new Date();
+
   form = signal<CreateInvoiceRequest>({
     patientId: '',
     clinicId: '',
     currencyId: '',
-    invoiceDate: new Date().toISOString(),
+    invoiceDate: '',
     discountPercent: 0,
     discountAmount: 0,
     visitIds: [],
@@ -202,15 +205,19 @@ export class InvoiceCreate implements OnInit {
       return;
     }
 
-    const payload: CreateInvoiceRequest = { ...f, items: cleanItems };
+    // تنسيق التاريخ كـ YYYY-MM-DD محلي
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const formattedDate = `${this.invoiceDate.getFullYear()}-${pad(this.invoiceDate.getMonth() + 1)}-${pad(this.invoiceDate.getDate())}`;
+
+    const payload: CreateInvoiceRequest = { ...f, invoiceDate: formattedDate, items: cleanItems };
     this.saving.set(true);
 
     this.invoiceService.create(payload).subscribe({
       next: (response) => {
         this.saving.set(false);
-        if (response.isSuccess) {
-          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم إنشاء الفاتورة.' });
-          this.router.navigate(['/patients', this.patientId]);
+        if (response.isSuccess && response.value) {
+          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم حفظ الفاتورة كمسودة.' });
+          this.router.navigate(['/patients', this.patientId, 'invoices', response.value]);
         }
       },
       error: () => {
@@ -221,6 +228,6 @@ export class InvoiceCreate implements OnInit {
   }
 
   cancel(): void {
-    this.router.navigate(['/patients', this.patientId]);
+    this.router.navigate(['/patients', this.patientId], { queryParams: { tab: 'invoices' } });
   }
 }
