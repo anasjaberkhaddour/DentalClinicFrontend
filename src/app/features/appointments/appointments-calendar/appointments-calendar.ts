@@ -93,7 +93,8 @@ export class AppointmentsCalendar implements OnInit {
       week: 'أسبوع',
       day: 'يوم'
     },
-    dayCellDidMount: (info) => this.onDayCellMount(info)
+    dayCellDidMount: (info) => this.onDayCellMount(info),
+    dayCellWillUnmount: (info) => this.onDayCellUnmount(info)
   };
 
   ngOnInit(): void {
@@ -187,9 +188,20 @@ export class AppointmentsCalendar implements OnInit {
     const cellDate = new Date(info.date);
     cellDate.setHours(0, 0, 0, 0);
 
-    if (cellDate < today) return;
-
     const cell = info.el as HTMLElement;
+
+    // اليوم الحالي
+    if (cellDate.getTime() === today.getTime()) {
+      cell.classList.add('fc-day-today-custom');
+    }
+
+    // الأيام الفائتة: تمييز فني، بدون زر إضافة
+    if (cellDate < today) {
+      cell.classList.add('fc-day-past');
+      return;
+    }
+
+    // الأيام القادمة: زر إضافة
     cell.classList.add('fc-day-with-add');
 
     const addBtn = document.createElement('button');
@@ -203,6 +215,14 @@ export class AppointmentsCalendar implements OnInit {
     });
 
     cell.appendChild(addBtn);
+  }
+
+  onDayCellUnmount(info: any): void {
+    const cell = info.el as HTMLElement;
+    const existingBtn = cell.querySelector('.day-add-btn');
+    if (existingBtn) {
+      existingBtn.remove();
+    }
   }
 
   onDayAdd(date: Date): void {
