@@ -98,3 +98,16 @@ export interface TreatmentCaseListItem {
     isActive: boolean;
     displayOrder: number;
   }
+
+  export interface TreatmentCaseProcedure {
+    id: string;
+    toothNumber: number;
+    treatmentNameAr: string | null;
+    performedAt: string;
+    notes: string | null;
+    isMesial: boolean;
+    isDistal: boolean;
+    isBuccal: boolean;
+    isLingual: boolean;
+    isOcclusal: boolean;
+  }

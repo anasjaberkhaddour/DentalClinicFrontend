@@ -21,8 +21,7 @@ import { PatientRadiology } from './patient-radiology/patient-radiology';
 import { PatientLabOrders } from './patient-lab-orders/patient-lab-orders';
 import { PatientToothChart } from './patient-tooth-chart/patient-tooth-chart';
 import { PatientTreatmentCases } from './patient-treatment-cases/patient-treatment-cases';
-import { GuardianRelationshipOptions } from '../../../core/constants/enums';
-
+import { GuardianRelationshipOptions, MaritalStatusLabels } from '../../../core/constants/enums';
 interface TabItem {
   key: string;
   label: string;
@@ -293,5 +292,10 @@ export class PatientDetail implements OnInit {
 
   getRelationshipName(r: number): string {
     return GuardianRelationshipOptions.find(o => o.value === r)?.label ?? '—';
+  }
+
+  getMaritalStatusName(status?: number): string {
+    if (!status) return '';
+    return MaritalStatusLabels[status] ?? '';
   }
 }

@@ -13,13 +13,13 @@ import { InvoiceService, CreateInvoiceRequest, CreateInvoiceItemRequest } from '
 import { ClinicService } from '../../../../core/services/clinic.service';
 import { CurrencyService } from '../../../../core/services/currency.service';
 import { PatientService } from '../../../../core/services/patient.service';
-
+import { SkeletonModule } from 'primeng/skeleton';
 @Component({
   selector: 'app-invoice-create',
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    ButtonModule, InputTextModule, InputNumberModule, TextareaModule, SelectModule, DatePickerModule
+    ButtonModule, InputTextModule, InputNumberModule, TextareaModule, SelectModule, DatePickerModule, SkeletonModule
   ],
   templateUrl: './invoice-create.html',
   styleUrl: './invoice-create.scss'
@@ -34,14 +34,17 @@ export class InvoiceCreate implements OnInit {
   private messageService = inject(MessageService);
 
   patientId!: string;
+  invoiceId: string | null = null;
+  isEditMode = false;
+
   saving = signal(false);
+  loadingInvoice = signal(false);
 
   clinics = signal<{ label: string; value: string }[]>([]);
   currencies = signal<{ label: string; value: string }[]>([]);
 
   items = signal<(CreateInvoiceItemRequest & { treatmentId?: string })[]>([]);
 
-  // تاريخ الفاتورة الافتراضي = اليوم
   invoiceDate: Date = new Date();
 
   form = signal<CreateInvoiceRequest>({
@@ -73,6 +76,9 @@ export class InvoiceCreate implements OnInit {
 
   ngOnInit(): void {
     this.patientId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.invoiceId = this.route.snapshot.paramMap.get('invoiceId');
+    this.isEditMode = !!this.invoiceId;
+
     if (!this.patientId) {
       this.router.navigate(['/patients']);
       return;
@@ -82,7 +88,12 @@ export class InvoiceCreate implements OnInit {
 
     this.loadClinics();
     this.loadCurrencies();
-    this.loadUnbilledTreatments();
+
+    if (this.isEditMode && this.invoiceId) {
+      this.loadInvoiceForEdit(this.invoiceId);
+    } else {
+      this.loadUnbilledTreatments();
+    }
   }
 
   loadClinics(): void {
@@ -90,7 +101,7 @@ export class InvoiceCreate implements OnInit {
       next: (response) => {
         if (response.isSuccess) {
           this.clinics.set(response.value.map((c: any) => ({ label: c.name, value: c.id })));
-          if (this.clinics().length === 1) {
+          if (!this.isEditMode && this.clinics().length === 1) {
             this.form.update(f => ({ ...f, clinicId: this.clinics()[0].value }));
           }
         }
@@ -106,9 +117,61 @@ export class InvoiceCreate implements OnInit {
             label: `${c.code} - ${c.nameAr}`,
             value: c.id
           })));
-          const base = response.value.find((c: any) => c.isBase);
-          if (base) this.form.update(f => ({ ...f, currencyId: base.id }));
+          if (!this.isEditMode) {
+            const base = response.value.find((c: any) => c.isBase);
+            if (base) this.form.update(f => ({ ...f, currencyId: base.id }));
+          }
         }
+      }
+    });
+  }
+
+  loadInvoiceForEdit(id: string): void {
+    this.loadingInvoice.set(true);
+    this.invoiceService.getById(id).subscribe({
+      next: (response) => {
+        if (!response.isSuccess || !response.value) {
+          this.loadingInvoice.set(false);
+          this.messageService.add({ severity: 'error', summary: 'خطأ', detail: 'تعذّر تحميل الفاتورة.' });
+          this.router.navigate(['/patients', this.patientId], { queryParams: { tab: 'invoices' } });
+          return;
+        }
+
+        const inv = response.value;
+
+        this.invoiceDate = inv.invoiceDate ? new Date(inv.invoiceDate) : new Date();
+
+        this.form.set({
+          patientId: inv.patientId,
+          clinicId: inv.clinicId,
+          currencyId: inv.currencyId,
+          invoiceDate: inv.invoiceDate,
+          dueDate: inv.dueDate,
+          discountPercent: inv.discountPercent ?? 0,
+          discountAmount: inv.discountAmount ?? 0,
+          notes: inv.notes ?? '',
+          visitIds: inv.visitIds ?? [],
+          items: []
+        });
+
+        const mapped = (inv.items ?? []).map((it: any, idx: number) => ({
+          treatmentId: it.treatmentId,
+          description: it.descriptionAr || it.description,
+          descriptionAr: it.descriptionAr,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          patientToothId: it.patientToothId,
+          notes: it.notes,
+          displayOrder: it.displayOrder ?? idx + 1
+        }));
+
+        this.items.set(mapped);
+        this.loadingInvoice.set(false);
+      },
+      error: () => {
+        this.loadingInvoice.set(false);
+        this.messageService.add({ severity: 'error', summary: 'خطأ', detail: 'تعذّر تحميل الفاتورة.' });
+        this.router.navigate(['/patients', this.patientId], { queryParams: { tab: 'invoices' } });
       }
     });
   }
@@ -205,29 +268,62 @@ export class InvoiceCreate implements OnInit {
       return;
     }
 
-    // تنسيق التاريخ كـ YYYY-MM-DD محلي
     const pad = (n: number) => n.toString().padStart(2, '0');
     const formattedDate = `${this.invoiceDate.getFullYear()}-${pad(this.invoiceDate.getMonth() + 1)}-${pad(this.invoiceDate.getDate())}`;
 
-    const payload: CreateInvoiceRequest = { ...f, invoiceDate: formattedDate, items: cleanItems };
     this.saving.set(true);
 
-    this.invoiceService.create(payload).subscribe({
-      next: (response) => {
-        this.saving.set(false);
-        if (response.isSuccess && response.value) {
-          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم حفظ الفاتورة كمسودة.' });
-          this.router.navigate(['/patients', this.patientId, 'invoices', response.value]);
+    if (this.isEditMode && this.invoiceId) {
+      const payload = {
+        dueDate: f.dueDate,
+        discountPercent: f.discountPercent,
+        discountAmount: f.discountAmount,
+        notes: f.notes,
+        visitIds: f.visitIds ?? [],
+        items: cleanItems
+      };
+
+      this.invoiceService.update(this.invoiceId, payload).subscribe({
+        next: (response) => {
+          this.saving.set(false);
+          if (response.isSuccess) {
+            this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم حفظ التعديلات.' });
+            this.router.navigate(['/patients', this.patientId, 'invoices', this.invoiceId]);
+          }
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'خطأ',
+            detail: err?.error?.error?.message ?? 'تعذّر حفظ التعديلات.'
+          });
         }
-      },
-      error: () => {
-        this.saving.set(false);
-        this.messageService.add({ severity: 'error', summary: 'خطأ', detail: 'تعذّر إنشاء الفاتورة.' });
-      }
-    });
+      });
+    } else {
+      const payload: CreateInvoiceRequest = { ...f, invoiceDate: formattedDate, items: cleanItems };
+
+      this.invoiceService.create(payload).subscribe({
+        next: (response) => {
+          this.saving.set(false);
+          if (response.isSuccess && response.value) {
+            this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم حفظ الفاتورة كمسودة.' });
+            this.router.navigate(['/patients', this.patientId, 'invoices', response.value]);
+          }
+        },
+        error: () => {
+          this.saving.set(false);
+          this.messageService.add({ severity: 'error', summary: 'خطأ', detail: 'تعذّر إنشاء الفاتورة.' });
+        }
+      });
+    }
   }
 
   cancel(): void {
-    this.router.navigate(['/patients', this.patientId], { queryParams: { tab: 'invoices' } });
+    if (this.isEditMode && this.invoiceId) {
+      this.router.navigate(['/patients', this.patientId, 'invoices', this.invoiceId]);
+    } else {
+      this.router.navigate(['/patients', this.patientId], { queryParams: { tab: 'invoices' } });
+    }
   }
 }

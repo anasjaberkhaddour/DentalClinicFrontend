@@ -206,7 +206,9 @@ export class InvoiceDetail implements OnInit {
   goBack(): void {
     this.router.navigate(['/patients', this.patientId], { queryParams: { tab: 'invoices' } });
   }
-
+  editInvoice(): void {
+    this.router.navigate(['/patients', this.patientId, 'invoices', this.invoiceId, 'edit']);
+  }
   getStatusName(status: number): string {
     const map: Record<number, string> = {
       1: 'مسودة', 2: 'صادرة', 3: 'مدفوعة جزئياً',

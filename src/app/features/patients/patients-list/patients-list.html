@@ -112,7 +112,7 @@
             </h3>
             <p class="text-xs text-slate-400 font-mono mb-1">#{{ patient.fileNumber }}</p>
             <p class="text-sm text-slate-500 mb-4">
-              {{ calculateAge(patient.dateOfBirth) }}
+              {{ calculateAge(patient.dateOfBirth) }}@if (patient.maritalStatus) { · {{ getMaritalStatusName(patient.maritalStatus) }} }
             </p>
 
             <div class="space-y-2 text-sm">
@@ -227,7 +227,7 @@
               </td>
               <td class="px-4 py-3 text-slate-600 font-mono">#{{ patient.fileNumber }}</td>
               <td class="px-4 py-3 text-slate-600" dir="ltr">{{ patient.primaryPhone || '—' }}</td>
-              <td class="px-4 py-3 text-slate-600">{{ calculateAge(patient.dateOfBirth) }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ calculateAge(patient.dateOfBirth) }}@if (patient.maritalStatus) { · {{ getMaritalStatusName(patient.maritalStatus) }} }</td>
               <td class="px-4 py-3 text-slate-600">
                 @if (patient.lastVisitDate) {
                   {{ patient.lastVisitDate | date:'dd/MM/yyyy' }}

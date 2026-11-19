@@ -12,6 +12,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { PatientService } from '../../../core/services/patient.service';
 import { PatientListItem, PatientFilter } from '../../../core/models/patient.model';
+import { MaritalStatusLabels } from '../../../core/constants/enums';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 @Component({
@@ -135,5 +136,9 @@ export class PatientsList implements OnInit {
     const m = today.getMonth() - birth.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
     return age;
+  }
+  getMaritalStatusName(status?: number): string {
+    if (!status) return '';
+    return MaritalStatusLabels[status] ?? '';
   }
 }

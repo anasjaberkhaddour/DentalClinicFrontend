@@ -1,4 +1,3 @@
-// patient-edit.ts
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -18,6 +17,7 @@ import {
   ContactTypeOptions,
   GenderOptions,
   BloodTypeOptions,
+  MaritalStatusOptions, // <-- تمت الإضافة
   ContactOwnerType
 } from '../../../core/constants/enums';
 import { ContactDto } from '../../../core/models/patient.model';
@@ -45,7 +45,6 @@ export class PatientEdit implements OnInit {
   saving = signal(false);
   patientId!: string;
   personId!: string;
-
   today = new Date();
   minBirthDate = new Date(1900, 0, 1);
   defaultBirthDate = new Date(1990, 0, 1);
@@ -53,6 +52,7 @@ export class PatientEdit implements OnInit {
   ContactTypeOptions = ContactTypeOptions;
   GenderOptions = GenderOptions;
   BloodTypeOptions = BloodTypeOptions;
+  MaritalStatusOptions = MaritalStatusOptions; // <-- تمت الإضافة
 
   form = {
     firstName: '',
@@ -62,6 +62,7 @@ export class PatientEdit implements OnInit {
     nationalId: '',
     dateOfBirth: null as string | null,
     gender: null as number | null,
+    maritalStatus: null as number | null, // <-- تمت الإضافة
     address: '',
     city: '',
     country: '',
@@ -71,7 +72,6 @@ export class PatientEdit implements OnInit {
   };
 
   contacts = signal<ContactDto[]>([]);
-
   newContact = {
     type: ContactType.Mobile,
     value: '',
@@ -79,7 +79,6 @@ export class PatientEdit implements OnInit {
     isPrimary: false,
     isEmergency: false
   };
-
   showAddContact = signal(false);
 
   ngOnInit(): void {
@@ -98,7 +97,6 @@ export class PatientEdit implements OnInit {
         if (res.isSuccess) {
           const p = res.value;
           this.personId = p.personId;
-
           this.form = {
             firstName: p.firstName,
             fatherName: p.fatherName ?? '',
@@ -107,6 +105,7 @@ export class PatientEdit implements OnInit {
             nationalId: p.nationalId ?? '',
             dateOfBirth: p.dateOfBirth ?? null,
             gender: p.gender ?? null,
+            maritalStatus: p.maritalStatus ?? null, // <-- تمت الإضافة
             address: p.address ?? '',
             city: p.city ?? '',
             country: p.country ?? '',
@@ -114,7 +113,6 @@ export class PatientEdit implements OnInit {
             bloodType: p.bloodType ?? null,
             isEmergency: p.isEmergency
           };
-
           this.contacts.set(p.contacts ?? []);
         }
         this.loading.set(false);
@@ -134,12 +132,12 @@ export class PatientEdit implements OnInit {
     }
 
     this.saving.set(true);
-
     const payload = {
       ...this.form,
       nationalId: this.form.nationalId.trim() || undefined,
       dateOfBirth: this.form.dateOfBirth || null,
       gender: this.form.gender ?? null,
+      maritalStatus: this.form.maritalStatus ?? null, // <-- تمت الإضافة
       bloodType: this.form.bloodType ?? null
     };
 
@@ -167,7 +165,6 @@ export class PatientEdit implements OnInit {
       this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'أدخل قيمة جهة الاتصال.' });
       return;
     }
-
     this.contactService.create({
       ownerType: ContactOwnerType.Person,
       ownerId: this.personId,

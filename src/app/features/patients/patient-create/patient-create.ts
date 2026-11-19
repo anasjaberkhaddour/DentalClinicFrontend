@@ -1,4 +1,3 @@
-// patient-create.ts
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,7 +15,8 @@ import {
   ContactType,
   ContactTypeOptions,
   GenderOptions,
-  BloodTypeOptions
+  BloodTypeOptions,
+  MaritalStatusOptions // <-- تمت الإضافة
 } from '../../../core/constants/enums';
 
 @Component({
@@ -38,7 +38,6 @@ export class PatientCreate implements OnInit {
 
   saving = signal(false);
   clinics = signal<{ label: string; value: string }[]>([]);
-
   today = new Date();
   minBirthDate = new Date(1900, 0, 1);
   defaultBirthDate = new Date(1990, 0, 1);
@@ -46,6 +45,7 @@ export class PatientCreate implements OnInit {
   ContactTypeOptions = ContactTypeOptions;
   GenderOptions = GenderOptions;
   BloodTypeOptions = BloodTypeOptions;
+  MaritalStatusOptions = MaritalStatusOptions; // <-- تمت الإضافة
 
   form = {
     firstName: '',
@@ -55,6 +55,7 @@ export class PatientCreate implements OnInit {
     nationalId: '',
     dateOfBirth: null as string | null,
     gender: null as number | null,
+    maritalStatus: null as number | null, // <-- تمت الإضافة
     address: '',
     city: '',
     country: '',
@@ -119,14 +120,14 @@ export class PatientCreate implements OnInit {
     }
 
     this.saving.set(true);
-
     const cleanContacts = this.form.contacts.filter(c => c.value.trim().length > 0);
-
+    
     const payload = {
       ...this.form,
       nationalId: this.form.nationalId.trim() || undefined,
       dateOfBirth: this.form.dateOfBirth || null,
       gender: this.form.gender ?? null,
+      maritalStatus: this.form.maritalStatus ?? null, // <-- تمت الإضافة
       bloodType: this.form.bloodType ?? null,
       contacts: cleanContacts
     };

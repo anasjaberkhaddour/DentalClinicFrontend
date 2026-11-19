@@ -42,6 +42,7 @@ export const routes: Routes = [
       { path: 'patients/:id/visits/create', loadComponent: () => import('./features/patients/patient-detail/visit-create/visit-create').then(m => m.VisitCreate) },
       { path: 'patients/:id/visits/:visitId', loadComponent: () => import('./features/patients/patient-detail/visit-detail/visit-detail').then(m => m.VisitDetail) },
       { path: 'patients/:id/invoices/create', loadComponent: () => import('./features/patients/patient-detail/invoice-create/invoice-create').then(m => m.InvoiceCreate) },
+      { path: 'patients/:id/invoices/:invoiceId/edit', loadComponent: () => import('./features/patients/patient-detail/invoice-create/invoice-create').then(m => m.InvoiceCreate) },
       { path: 'patients/:id/invoices/:invoiceId', loadComponent: () => import('./features/patients/patient-detail/invoice-detail/invoice-detail').then(m => m.InvoiceDetail) },
       { path: 'patients/:id/appointments/create', loadComponent: () => import('./features/patients/patient-detail/appointment-create/appointment-create').then(m => m.AppointmentCreate) },
       { path: 'patients/:id/appointments/:appointmentId', loadComponent: () => import('./features/patients/patient-detail/appointment-detail/appointment-detail').then(m => m.AppointmentDetail) },

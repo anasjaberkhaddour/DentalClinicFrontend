@@ -8,7 +8,8 @@ import {
   TreatmentCaseDetails,
   CreateTreatmentCaseRequest,
   UpdateTreatmentCaseRequest,
-  DiagnosisType
+  DiagnosisType,
+  TreatmentCaseProcedure
 } from '../models/treatment-case.model';
 @Injectable({ providedIn: 'root' })
 export class TreatmentCaseService {
@@ -60,5 +61,11 @@ export class TreatmentCaseService {
 
   getUnbilledTreatments(patientId: string): Observable<ApiResponse<any[]>> {
     return this.api.get<any[]>(`/api/v1/Patients/${patientId}/unbilled-treatments`);
+  }
+
+  getProcedures(caseId: string): Observable<ApiResponse<TreatmentCaseProcedure[]>> {
+    return this.api.get<TreatmentCaseProcedure[]>(
+      `${API_ENDPOINTS.treatmentCases.byId(caseId)}/procedures`
+    );
   }
 }

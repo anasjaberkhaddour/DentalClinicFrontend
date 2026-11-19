@@ -27,15 +27,19 @@
   
           <div class="flex flex-wrap items-center gap-2">
             <button pButton type="button" label="رجوع" icon="pi pi-arrow-right" severity="secondary" [outlined]="true" (click)="goBack()"></button>
-  
+          
+            @if (inv.status !== 6) {
+              <button pButton type="button" label="تعديل" icon="pi pi-pencil" severity="secondary" [outlined]="true" (click)="editInvoice()"></button>
+            }
+          
             @if (inv.status === 1) {
               <button pButton type="button" label="إصدار" icon="pi pi-send" [loading]="actionLoading()" (click)="issue()"></button>
             }
-  
-            @if (inv.status === 2 || inv.status === 3 || inv.status === 5) {
+          
+            @if (inv.status !== 6) {
               <button pButton type="button" label="تسجيل دفعة" icon="pi pi-dollar" (click)="openPaymentDialog()"></button>
             }
-  
+          
             @if (inv.status !== 4 && inv.status !== 6) {
               <button pButton type="button" icon="pi pi-times" label="إلغاء" severity="danger" [outlined]="true" (click)="cancelInvoice()"></button>
             }

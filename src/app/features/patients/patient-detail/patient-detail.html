@@ -64,6 +64,9 @@
               @if (p.dateOfBirth) {
                 <span class="flex items-center gap-1"><i class="pi pi-calendar text-xs"></i>{{ calculateAge(p.dateOfBirth) }}</span>
               }
+              @if (p.maritalStatus) {
+                <span class="flex items-center gap-1"><i class="pi pi-user text-xs"></i>{{ getMaritalStatusName(p.maritalStatus) }}</span>
+              }
               <span class="flex items-center gap-1"><i class="pi pi-user text-xs"></i>{{ getGenderName(p.gender) }}</span>
               @if (p.bloodType) {
                 <span class="flex items-center gap-1"><i class="pi pi-heart text-xs"></i>{{ getBloodTypeName(p.bloodType) }}</span>

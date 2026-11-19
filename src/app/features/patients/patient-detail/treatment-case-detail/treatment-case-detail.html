@@ -164,41 +164,78 @@
       }
     </div>
 
-    <!-- 
-      ===== قسم الأسنان المستهدفة (مخفي مؤقتاً) =====
-      لإعادة إظهاره، احذف التعليقات حول الكتلة التالية.
-    -->
-    <!--
+    <!-- ===== الإجراءات المنفذة (المرتبطة بهذه الحالة) ===== -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm">
-          <i class="pi pi-th-large text-primary-600"></i>
-          الأسنان المستهدفة
+          <i class="pi pi-wrench text-primary-600"></i>
+          الإجراءات المنفذة
+          @if (caseProcedures().length > 0) {
+            <span class="text-xs px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 font-bold">
+              {{ caseProcedures().length }}
+            </span>
+          }
         </h3>
-        <button pButton type="button" label="إضافة" icon="pi pi-plus" size="small" [outlined]="true" (click)="openTeethEdit()"></button>
       </div>
-      
-      @if (c.teeth.length === 0) {
-        <p class="text-sm text-slate-400 text-center py-4">لا توجد أسنان مضافة.</p>
+
+      @if (proceduresLoading()) {
+        <div class="space-y-2">
+          <p-skeleton height="3.5rem" styleClass="mb-2" />
+          <p-skeleton height="3.5rem" />
+        </div>
+      } @else if (caseProcedures().length === 0) {
+        <div class="p-6 text-center bg-slate-50 rounded-xl">
+          <i class="pi pi-wrench text-slate-300 text-2xl mb-2 block"></i>
+          <p class="text-sm text-slate-400">لا توجد إجراءات مرتبطة بهذه الحالة بعد.</p>
+          <p class="text-xs text-slate-400 mt-1">
+            يمكنك إضافتها من صفحة مخطط الأسنان مع اختيار هذه الحالة.
+          </p>
+        </div>
       } @else {
-        <div class="flex flex-wrap gap-3">
-          @for (t of c.teeth; track t.patientToothId) {
-            <div class="relative group">
-              <div class="w-14 h-16 rounded-xl bg-slate-50 border-2 border-slate-200 flex flex-col items-center justify-center transition-colors group-hover:border-primary-300">
-                <span class="font-bold text-slate-700">{{ t.toothNumber }}</span>
+        <div class="space-y-2">
+          @for (p of caseProcedures(); track p.id) {
+            <div class="group flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-200 hover:border-primary-300 hover:shadow-sm transition-all">
+
+              <!-- رقم السن -->
+              <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 flex flex-col items-center justify-center shrink-0">
+                <span class="text-[9px] text-primary-600 leading-none">السن</span>
+                <span class="font-bold text-primary-800 text-sm font-mono leading-tight">{{ p.toothNumber }}</span>
               </div>
-              <button 
-                type="button" 
-                class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                (click)="removeTooth(t.patientToothId)">
-                <i class="pi pi-times text-[10px]"></i>
-              </button>
+
+              <!-- المحتوى -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold text-slate-800 text-sm">
+                    {{ p.treatmentNameAr || '—' }}
+                  </span>
+                  @if (getSurfaces(p).length > 0) {
+                    <div class="flex gap-1">
+                      @for (s of getSurfaces(p); track s) {
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 font-bold">
+                          {{ s }}
+                        </span>
+                      }
+                    </div>
+                  }
+                </div>
+                @if (p.notes) {
+                  <div class="text-xs text-slate-500 mt-1 italic line-clamp-1">
+                    {{ p.notes }}
+                  </div>
+                }
+              </div>
+
+              <!-- التاريخ -->
+              <div class="flex items-center gap-1.5 text-xs text-slate-500 shrink-0">
+                <i class="pi pi-calendar text-slate-400 text-[10px]"></i>
+                <span class="font-mono">{{ p.performedAt | date:'dd/MM/yyyy' }}</span>
+              </div>
+
             </div>
           }
         </div>
       }
     </div>
-    -->
 
     <!-- خطة العلاج -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">

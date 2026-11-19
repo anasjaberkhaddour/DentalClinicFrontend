@@ -2,156 +2,170 @@
 
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800">فاتورة جديدة</h1>
-      <p class="text-slate-500 text-sm mt-1">إنشاء فاتورة للمريض</p>
+      <h1 class="text-2xl font-bold text-slate-800">{{ isEditMode ? 'تعديل فاتورة' : 'فاتورة جديدة' }}</h1>
+      <p class="text-slate-500 text-sm mt-1">{{ isEditMode ? 'تعديل بنود الفاتورة' : 'إنشاء فاتورة للمريض' }}</p>
     </div>
     <button pButton type="button" label="إلغاء" icon="pi pi-times" severity="secondary" [outlined]="true" (click)="cancel()"></button>
   </div>
 
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-    <h2 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-      <i class="pi pi-info-circle text-primary-600"></i>
-      المعلومات الأساسية
-    </h2>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">العيادة <span class="text-red-500">*</span></label>
-        <p-select
-          [ngModel]="form().clinicId"
-          (ngModelChange)="updateForm({ clinicId: $event })"
-          [options]="clinics()" optionLabel="label" optionValue="value"
-          placeholder="اختر العيادة" styleClass="w-full" />
-      </div>
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">العملة <span class="text-red-500">*</span></label>
-        <p-select
-          [ngModel]="form().currencyId"
-          (ngModelChange)="updateForm({ currencyId: $event })"
-          [options]="currencies()" optionLabel="label" optionValue="value"
-          placeholder="اختر العملة" styleClass="w-full" />
-      </div>
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">تاريخ الفاتورة</label>
-        <p-datepicker
-        [(ngModel)]="invoiceDate"
-        dateFormat="dd/mm/yy" styleClass="w-full" appendTo="body" />
-      </div>
+  @if (loadingInvoice()) {
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-3">
+      <p-skeleton width="40%" height="2rem" />
+      <p-skeleton width="60%" height="1rem" />
+      <p-skeleton width="80%" height="1rem" />
     </div>
-  </div>
+  } @else {
 
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-    <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-      <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
-        <i class="pi pi-list text-primary-600"></i>
-        بنود الفاتورة
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h2 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+        <i class="pi pi-info-circle text-primary-600"></i>
+        المعلومات الأساسية
       </h2>
-      <button pButton type="button" label="إضافة بند" icon="pi pi-plus" size="small" (click)="addItem()"></button>
-    </div>
 
-    <div class="space-y-3">
-      @for (item of items(); track $index; let i = $index) {
-        <div class="grid grid-cols-12 gap-2 items-start p-3 rounded-xl bg-slate-50 border border-slate-100">
-
-          <div class="col-span-12 md:col-span-6">
-            <label class="block text-xs text-slate-500 mb-1">الوصف</label>
-            <input pInputText
-              [ngModel]="item.description"
-              (ngModelChange)="updateItem(i, { description: $event })"
-              placeholder="وصف البند" class="w-full" />
-          </div>
-
-          <div class="col-span-4 md:col-span-1">
-            <label class="block text-xs text-slate-500 mb-1">الكمية</label>
-            <p-inputnumber
-              [ngModel]="item.quantity"
-              (ngModelChange)="updateItem(i, { quantity: $event })"
-              [min]="0.01" [minFractionDigits]="0" [maxFractionDigits]="2"
-              styleClass="w-full" inputStyleClass="w-full" />
-          </div>
-
-          <div class="col-span-4 md:col-span-2">
-            <label class="block text-xs text-slate-500 mb-1">السعر</label>
-            <p-inputnumber
-              [ngModel]="item.unitPrice"
-              (ngModelChange)="updateItem(i, { unitPrice: $event })"
-              [min]="0" [minFractionDigits]="0" [maxFractionDigits]="2"
-              styleClass="w-full" inputStyleClass="w-full" />
-          </div>
-
-          <div class="col-span-4 md:col-span-2">
-            <label class="block text-xs text-slate-500 mb-1">المجموع</label>
-            <div class="p-2 bg-white rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 h-10 flex items-center">
-              {{ ((item.quantity ?? 0) * (item.unitPrice ?? 0)) | number:'1.0-2' }}
-            </div>
-          </div>
-
-          <div class="col-span-12 md:col-span-1 flex justify-end md:justify-center pt-5">
-            <button pButton type="button" icon="pi pi-trash" severity="danger" [text]="true" (click)="removeItem(i)"></button>
-          </div>
-        </div>
-      }
-    </div>
-  </div>
-
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="space-y-4">
-        <h2 class="font-bold text-slate-700 text-lg mb-3 flex items-center gap-2 border-b border-slate-100 pb-3">
-          <i class="pi pi-percent text-primary-600"></i>
-          الخصم
-        </h2>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">نسبة الخصم %</label>
-            <p-inputnumber
-              [ngModel]="form().discountPercent"
-              (ngModelChange)="onPercentChange($event)"
-              [min]="0" [max]="100" [minFractionDigits]="0" [maxFractionDigits]="2"
-              styleClass="w-full" inputStyleClass="w-full" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">خصم ثابت</label>
-            <p-inputnumber
-              [ngModel]="form().discountAmount"
-              (ngModelChange)="onFixedChange($event)"
-              [min]="0" [minFractionDigits]="0" [maxFractionDigits]="2"
-              styleClass="w-full" inputStyleClass="w-full" />
-          </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">العيادة <span class="text-red-500">*</span></label>
+          <p-select
+            [ngModel]="form().clinicId"
+            (ngModelChange)="updateForm({ clinicId: $event })"
+            [options]="clinics()" optionLabel="label" optionValue="value"
+            placeholder="اختر العيادة" styleClass="w-full" />
         </div>
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات</label>
-          <textarea pTextarea
-            [ngModel]="form().notes"
-            (ngModelChange)="updateForm({ notes: $event })"
-            rows="2" class="w-full"></textarea>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">العملة <span class="text-red-500">*</span></label>
+          <p-select
+            [ngModel]="form().currencyId"
+            (ngModelChange)="updateForm({ currencyId: $event })"
+            [options]="currencies()" optionLabel="label" optionValue="value"
+            placeholder="اختر العملة" styleClass="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">تاريخ الفاتورة</label>
+          <p-datepicker
+            [(ngModel)]="invoiceDate"
+            dateFormat="dd/mm/yy" styleClass="w-full" appendTo="body" />
         </div>
       </div>
+    </div>
 
-      <div class="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-6 border border-primary-200">
-        <h3 class="font-bold text-primary-800 mb-4">ملخص</h3>
-        <div class="space-y-3">
-          <div class="flex justify-between text-sm">
-            <span class="text-primary-700">المجموع الفرعي</span>
-            <span class="font-semibold text-primary-900">{{ subTotal() | number:'1.0-2' }}</span>
-          </div>
-          @if (discountValue() > 0) {
-            <div class="flex justify-between text-sm">
-              <span class="text-red-700">الخصم</span>
-              <span class="font-semibold text-red-800">- {{ discountValue() | number:'1.0-2' }}</span>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+        <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+          <i class="pi pi-list text-primary-600"></i>
+          بنود الفاتورة
+        </h2>
+        <button pButton type="button" label="إضافة بند" icon="pi pi-plus" size="small" (click)="addItem()"></button>
+      </div>
+
+      <div class="space-y-3">
+        @for (item of items(); track $index; let i = $index) {
+          <div class="grid grid-cols-12 gap-2 items-start p-3 rounded-xl bg-slate-50 border border-slate-100">
+
+            <div class="col-span-12 md:col-span-6">
+              <label class="block text-xs text-slate-500 mb-1">الوصف</label>
+              <input pInputText
+                [ngModel]="item.description"
+                (ngModelChange)="updateItem(i, { description: $event })"
+                placeholder="وصف البند" class="w-full" />
             </div>
-          }
-          <div class="border-t border-primary-300 pt-3 flex justify-between items-center">
-            <span class="font-bold text-primary-800">الإجمالي</span>
-            <span class="text-2xl font-bold text-primary-900">{{ total() | number:'1.0-2' }}</span>
+
+            <div class="col-span-4 md:col-span-1">
+              <label class="block text-xs text-slate-500 mb-1">الكمية</label>
+              <p-inputnumber
+                [ngModel]="item.quantity"
+                (ngModelChange)="updateItem(i, { quantity: $event })"
+                [min]="0.01" [minFractionDigits]="0" [maxFractionDigits]="2"
+                styleClass="w-full" inputStyleClass="w-full" />
+            </div>
+
+            <div class="col-span-4 md:col-span-2">
+              <label class="block text-xs text-slate-500 mb-1">السعر</label>
+              <p-inputnumber
+                [ngModel]="item.unitPrice"
+                (ngModelChange)="updateItem(i, { unitPrice: $event })"
+                [min]="0" [minFractionDigits]="0" [maxFractionDigits]="2"
+                styleClass="w-full" inputStyleClass="w-full" />
+            </div>
+
+            <div class="col-span-4 md:col-span-2">
+              <label class="block text-xs text-slate-500 mb-1">المجموع</label>
+              <div class="p-2 bg-white rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 h-10 flex items-center">
+                {{ ((item.quantity ?? 0) * (item.unitPrice ?? 0)) | number:'1.0-2' }}
+              </div>
+            </div>
+
+            <div class="col-span-12 md:col-span-1 flex justify-end md:justify-center pt-5">
+              <button pButton type="button" icon="pi pi-trash" severity="danger" [text]="true" (click)="removeItem(i)"></button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-4">
+          <h2 class="font-bold text-slate-700 text-lg mb-3 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <i class="pi pi-percent text-primary-600"></i>
+            الخصم
+          </h2>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">نسبة الخصم %</label>
+              <p-inputnumber
+                [ngModel]="form().discountPercent"
+                (ngModelChange)="onPercentChange($event)"
+                [min]="0" [max]="100" [minFractionDigits]="0" [maxFractionDigits]="2"
+                styleClass="w-full" inputStyleClass="w-full" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">خصم ثابت</label>
+              <p-inputnumber
+                [ngModel]="form().discountAmount"
+                (ngModelChange)="onFixedChange($event)"
+                [min]="0" [minFractionDigits]="0" [maxFractionDigits]="2"
+                styleClass="w-full" inputStyleClass="w-full" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات</label>
+            <textarea pTextarea
+              [ngModel]="form().notes"
+              (ngModelChange)="updateForm({ notes: $event })"
+              rows="2" class="w-full"></textarea>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-6 border border-primary-200">
+          <h3 class="font-bold text-primary-800 mb-4">ملخص</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between text-sm">
+              <span class="text-primary-700">المجموع الفرعي</span>
+              <span class="font-semibold text-primary-900">{{ subTotal() | number:'1.0-2' }}</span>
+            </div>
+            @if (discountValue() > 0) {
+              <div class="flex justify-between text-sm">
+                <span class="text-red-700">الخصم</span>
+                <span class="font-semibold text-red-800">- {{ discountValue() | number:'1.0-2' }}</span>
+              </div>
+            }
+            <div class="border-t border-primary-300 pt-3 flex justify-between items-center">
+              <span class="font-bold text-primary-800">الإجمالي</span>
+              <span class="text-2xl font-bold text-primary-900">{{ total() | number:'1.0-2' }}</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="sticky bottom-4 bg-white rounded-2xl shadow-lg border border-slate-200 p-4 flex items-center justify-end gap-2">
-    <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="cancel()"></button>
-    <button pButton type="button" label="حفظ كمسودة" icon="pi pi-save" [loading]="saving()" (click)="save()"></button>
-  </div>
+    <div class="sticky bottom-4 bg-white rounded-2xl shadow-lg border border-slate-200 p-4 flex items-center justify-end gap-2">
+      <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="cancel()"></button>
+      <button pButton
+        type="button"
+        [label]="isEditMode ? 'حفظ التعديلات' : 'حفظ كمسودة'"
+        [icon]="isEditMode ? 'pi pi-check' : 'pi pi-save'"
+        [loading]="saving()"
+        (click)="save()"></button>
+    </div>
+  }
 </div>

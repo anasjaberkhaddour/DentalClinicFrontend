@@ -133,7 +133,26 @@ export enum ContactOwnerType {
   export const GuardianRelationshipOptions = Object.entries(GuardianRelationshipLabels)
     .map(([k, v]) => ({ label: v, value: Number(k) }));
   
-  
+  // ============ Person (Marital Status) ============
+
+export enum MaritalStatus {
+  Single = 1,
+  Married = 2,
+  Divorced = 3,
+  Widowed = 4,
+  Other = 99
+}
+
+export const MaritalStatusLabels: Record<number, string> = {
+  [MaritalStatus.Single]: 'أعزب / عزباء',
+  [MaritalStatus.Married]: 'متزوج / ة',
+  [MaritalStatus.Divorced]: 'مطلق / ة',
+  [MaritalStatus.Widowed]: 'أرمل / ة',
+  [MaritalStatus.Other]: 'أخرى'
+};
+
+export const MaritalStatusOptions = Object.entries(MaritalStatusLabels)
+  .map(([k, v]) => ({ label: v, value: Number(k) }));
   // ============ Tooth ============
   
   export enum ToothStatus {

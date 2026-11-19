@@ -17,7 +17,8 @@ export interface PatientListItem {
   hasCriticalAlerts: boolean;
   outstandingBalance: number;
   hasInvoices: boolean;
-  fileNumber: number
+  fileNumber: number;
+  maritalStatus?: number;
 }
   
   export interface PatientDetails {
@@ -43,7 +44,9 @@ export interface PatientListItem {
     contacts: ContactDto[];
     guardians: GuardianDto[];
     photoUrl?: string;
-    fileNumber: number
+    fileNumber: number;
+    maritalStatus?: number;
+
 }
   
   export interface MedicalHistory {
@@ -102,6 +105,7 @@ export interface PatientListItem {
     bloodType?: number;
     isEmergency: boolean;
     registrationClinicId: string;
+    maritalStatus?: number;
   }
   
   export interface UpdatePatientRequest {
@@ -118,6 +122,7 @@ export interface PatientListItem {
     notes?: string;
     bloodType?: number;
     isEmergency: boolean;
+    maritalStatus?: number;
   }
   
   export interface PatientFilter {

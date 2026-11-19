@@ -10,12 +10,12 @@ import { TextareaModule } from 'primeng/textarea';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { DatePickerModule } from 'primeng/datepicker';
 import { MessageService, ConfirmationService } from 'primeng/api';
+import { TooltipModule } from 'primeng/tooltip';
 import { TreatmentCaseService } from '../../../../core/services/treatment-case.service';
-import { TreatmentCaseDetails } from '../../../../core/models/treatment-case.model';
+import { TreatmentCaseDetails, TreatmentCaseProcedure } from '../../../../core/models/treatment-case.model';
 import { TreatmentCaseStatusLabels, TreatmentCaseStatusOptions } from '../../../../core/constants/enums';
 import { ToothIcon } from '../../../../shared/components/tooth-icon/tooth-icon';
 import { FDI_UPPER_RIGHT, FDI_UPPER_LEFT, FDI_LOWER_RIGHT, FDI_LOWER_LEFT } from '../../../../core/models/tooth-chart.model';
-import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-treatment-case-detail',
@@ -23,7 +23,7 @@ import { TooltipModule } from 'primeng/tooltip';
   imports: [
     CommonModule, FormsModule, RouterLink,
     ButtonModule, SkeletonModule, DialogModule, InputTextModule,
-    TextareaModule, MultiSelectModule, DatePickerModule, ToothIcon, TooltipModule 
+    TextareaModule, MultiSelectModule, DatePickerModule, ToothIcon, TooltipModule
   ],
   templateUrl: './treatment-case-detail.html',
   styleUrl: './treatment-case-detail.scss'
@@ -73,12 +73,16 @@ export class TreatmentCaseDetail implements OnInit {
     const search = this.diagnosisSearch().toLowerCase().trim();
     if (!search) return [];
     const currentIds = this.tc()?.diagnoses.map(d => d.diagnosisTypeId) || [];
-    return this.diagnosisOptions().filter(d => 
+    return this.diagnosisOptions().filter(d =>
       d.nameAr.toLowerCase().includes(search) && !currentIds.includes(d.id)
     );
   });
 
   currentTeethSelection = signal<string[]>([]);
+
+  // ===== الإجراءات المرتبطة بالحالة =====
+  caseProcedures = signal<TreatmentCaseProcedure[]>([]);
+  proceduresLoading = signal(false);
 
   ngOnInit(): void {
     this.patientId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -88,7 +92,7 @@ export class TreatmentCaseDetail implements OnInit {
       this.router.navigate(['/patients']);
       return;
     }
-    
+
     this.loadDiagnoses();
     this.loadTeeth();
     this.loadCase();
@@ -100,6 +104,7 @@ export class TreatmentCaseDetail implements OnInit {
       next: (res: any) => {
         if (res.isSuccess) {
           this.tc.set(res.value);
+          this.loadCaseProcedures();
         }
         this.loading.set(false);
       },
@@ -109,6 +114,31 @@ export class TreatmentCaseDetail implements OnInit {
         this.router.navigate(['/patients', this.patientId], { queryParams: { tab: 'treatment-cases' } });
       }
     });
+  }
+
+  // ===== جلب الإجراءات المرتبطة بهذه الحالة (طلب واحد) =====
+  loadCaseProcedures(): void {
+    this.proceduresLoading.set(true);
+    this.treatmentCaseService.getProcedures(this.caseId).subscribe({
+      next: (res: any) => {
+        this.caseProcedures.set(res.isSuccess ? (res.value ?? []) : []);
+        this.proceduresLoading.set(false);
+      },
+      error: () => {
+        this.caseProcedures.set([]);
+        this.proceduresLoading.set(false);
+      }
+    });
+  }
+
+  getSurfaces(p: TreatmentCaseProcedure): string[] {
+    const s: string[] = [];
+    if (p.isMesial) s.push('M');
+    if (p.isDistal) s.push('D');
+    if (p.isBuccal) s.push('B');
+    if (p.isLingual) s.push('L');
+    if (p.isOcclusal) s.push('O');
+    return s;
   }
 
   getStatusName(status: number): string {
@@ -142,12 +172,10 @@ export class TreatmentCaseDetail implements OnInit {
     if (!c) return;
 
     this.editSaving.set(true);
-    
-    // تحويل التاريخ إلى YYYY-MM-DD لتفادي مشكلة المناطق الزمنية
+
     let formattedDate = null;
     if (this.editForm.startDate) {
       const d = new Date(this.editForm.startDate);
-      // تعويض فارق التوقيت للحصول على اليوم المحلي الصحيح
       const offset = d.getTimezoneOffset() * 60000;
       formattedDate = new Date(d.getTime() - offset).toISOString().split('T')[0];
     }
@@ -195,7 +223,7 @@ export class TreatmentCaseDetail implements OnInit {
     if (!c) return;
 
     this.editFieldSaving.set(true);
-    
+
     const payload = {
       title: c.title,
       startDate: c.startDate,
@@ -246,7 +274,7 @@ export class TreatmentCaseDetail implements OnInit {
       }
     });
   }
-  
+
   removeDiagnosis(diagnosisId: string): void {
     const c = this.tc();
     if (!c) return;
@@ -309,7 +337,7 @@ export class TreatmentCaseDetail implements OnInit {
       }
     });
   }
-  
+
   removeTooth(patientToothId: string): void {
     const c = this.tc();
     if (!c) return;
