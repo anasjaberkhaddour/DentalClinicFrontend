@@ -160,4 +160,20 @@ export const API_ENDPOINTS = {
       byId: (id: string) => `/api/v1/DiagnosisTypes/${id}`,
     },
 
+    activeIngredients: {
+      base: '/api/v1/ActiveIngredients',
+      byId: (id: string) => `/api/v1/ActiveIngredients/${id}`,
+    },
+    
+    brandNames: {
+      base: '/api/v1/BrandNames',
+      byId: (id: string) => `/api/v1/BrandNames/${id}`,
+    },
+    
+    prescriptions: {
+      base: '/api/v1/Prescriptions',
+      byId: (id: string) => `/api/v1/Prescriptions/${id}`,
+      byVisit: (visitId: string) => `/api/v1/Prescriptions/by-visit/${visitId}`,
+      save: '/api/v1/Prescriptions/save',
+    },
   };

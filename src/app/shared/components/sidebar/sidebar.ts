@@ -60,6 +60,8 @@ export class Sidebar {
       items: [
         { label: 'المستخدمون', icon: 'pi-user-edit', route: '/users', permission: 'users.view' },
         { label: 'الأدوار والصلاحيات', icon: 'pi-shield', route: '/roles', permission: 'roles.view' },
+        { label: 'التركيبات الدوائية', icon: 'pi-box', route: '/medications/active-ingredients', permission: 'medications.view' },
+        { label: 'الأسماء التجارية', icon: 'pi-tags', route: '/medications/brand-names', permission: 'medications.view' },
         { label: 'أنواع العلاجات', icon: 'pi-list', route: '/treatments', permission: 'treatments.view' },
         { label: 'أنواع التشخيص', icon: 'pi-list', route: '/diagnosis-types', permission: 'treatments.view' },
         { label: 'المواد الترميمية', icon: 'pi-tag', route: '/materials', permission: 'treatments.view' },

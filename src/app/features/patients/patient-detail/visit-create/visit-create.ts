@@ -7,16 +7,30 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
+import { AutoCompleteModule } from 'primeng/autocomplete';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { MessageService } from 'primeng/api';
 import { VisitService, CreateVisitRequest } from '../../../../core/services/visit.service';
 import { ClinicService } from '../../../../core/services/clinic.service';
 import { TreatmentCaseService } from '../../../../core/services/treatment-case.service';
 import { TokenStorageService } from '../../../../core/services/token-storage.service';
-
+import { PrescriptionService } from '../../../../core/services/prescription.service';
+import { BrandNameService } from '../../../../core/services/brand-name.service';
+import { SavePrescriptionItemRequest } from '../../../../core/models/prescription.model';
+import {
+  MedicationFrequency,
+  MedicationRoute,
+  MedicationFrequencyLabels,
+  MedicationRouteLabels
+} from '../../../../core/constants/enums';
+import { PatientService } from '../../../../core/services/patient.service';
 @Component({
   selector: 'app-visit-create',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, TextareaModule, SelectModule, DatePickerModule],
+  imports: [
+    CommonModule, FormsModule, ButtonModule, InputTextModule, TextareaModule,
+    SelectModule, DatePickerModule, AutoCompleteModule, InputNumberModule
+  ],
   templateUrl: './visit-create.html',
   styleUrl: './visit-create.scss'
 })
@@ -28,6 +42,11 @@ export class VisitCreate implements OnInit {
   private treatmentCaseService = inject(TreatmentCaseService);
   private tokenStorage = inject(TokenStorageService);
   private messageService = inject(MessageService);
+
+  private patientService = inject(PatientService);
+  patientName = signal<string>('');
+  private prescriptionService = inject(PrescriptionService);
+  private brandNameService = inject(BrandNameService);
 
   patientId!: string;
   caseId: string | null = null;
@@ -45,7 +64,25 @@ export class VisitCreate implements OnInit {
     visitDate: undefined,
     patientToothIds: [],
   };
+// ============ Prescription Builder ============
+  prescriptionItems = signal<(SavePrescriptionItemRequest & {
+    brandNameAr?: string;
+    activeIngredientNameAr?: string;
+  })[]>([]);
+  medicationSuggestions = signal<any[]>([]);
+  selectedMedication = signal<any>(null);
+  prescriptionGeneralNotes = signal<string>('');
+  private prescriptionSuggestionsCache = signal<any[]>([]);
 
+  frequencyOptions = Object.entries(MedicationFrequencyLabels)
+    .filter(([k]) => !isNaN(Number(k)))
+    .map(([k, v]) => ({ label: v, value: Number(k) }));
+
+  routeOptions = Object.entries(MedicationRouteLabels)
+    .filter(([k]) => !isNaN(Number(k)))
+    .map(([k, v]) => ({ label: v, value: Number(k) }));
+
+    
   private toLocalIsoString(date: Date): string {
     const pad = (n: number) => n.toString().padStart(2, '0');
     const y = date.getFullYear();
@@ -86,6 +123,14 @@ export class VisitCreate implements OnInit {
     }
 
     this.loadClinics();
+
+    this.patientService.getById(this.patientId).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          this.patientName.set(`${res.value.firstName} ${res.value.lastName}`);
+        }
+      }
+    });
   }
 
   loadCaseClinic(caseId: string): void {
@@ -129,46 +174,151 @@ export class VisitCreate implements OnInit {
     }
   }
 
-  save(): void {
-    if (!this.form.clinicId) {
-      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'يرجى اختيار العيادة.' });
+  searchMedications(event: any): void {
+    const term = event.query?.trim();
+    if (!term || term.length < 2) {
+      this.medicationSuggestions.set([]);
       return;
     }
-
-    if (!this.visitDate || !this.visitTime) {
-      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'يرجى تحديد التاريخ والوقت.' });
-      return;
-    }
-
-    const combined = new Date(this.visitDate);
-    combined.setHours(this.visitTime.getHours(), this.visitTime.getMinutes(), 0, 0);
-    
-    this.form.visitDate = this.toLocalIsoString(combined);
-
-    this.saving.set(true);
-    this.visitService.create(this.form).subscribe({
-      next: (response) => {
-        this.saving.set(false);
-        if (response.isSuccess) {
-          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم إنشاء الجلسة بنجاح.' });
-
-          if (this.caseId) {
-            this.router.navigate(['/patients', this.patientId, 'treatment-cases', this.caseId]);
-          } else {
-            this.router.navigate(['/patients', this.patientId, 'visits', response.value]);
-          }
-        }
+    this.brandNameService.search(term).subscribe({
+      next: (res) => {
+        this.medicationSuggestions.set(res.isSuccess ? res.value : []);
       },
-      error: (err) => {
-        this.saving.set(false);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'خطأ',
-          detail: err?.error?.error?.message ?? 'تعذّر إنشاء الجلسة.'
-        });
+      error: () => {
+        this.medicationSuggestions.set([]);
       }
     });
   }
+  
+  addMedication(): void {
+    const med = this.selectedMedication();
+    if (!med || !med.id) return;
+  
+    const exists = this.prescriptionItems().some(i => i.brandNameId === med.id);
+    if (exists) {
+      this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'هذا الدواء مُضاف بالفعل.' });
+      this.selectedMedication.set(null);
+      return;
+    }
+  
+    // حفظ في Cache لضمان ظهور الاسم
+    this.prescriptionSuggestionsCache.update(cache => {
+      if (!cache.find((c: any) => c.id === med.id)) {
+        return [...cache, med];
+      }
+      return cache;
+    });
+  
+    const newOrder = this.prescriptionItems().length + 1;
+    this.prescriptionItems.update(items => [...items, {
+      brandNameId: med.id,
+      brandNameAr: med.nameAr,
+      activeIngredientNameAr: med.activeIngredientNameAr,
+      dosage: '1 قرص',
+      frequency: MedicationFrequency.OnceDaily,
+      route: MedicationRoute.Oral,
+      quantity: 1,
+      displayOrder: newOrder
+    }]);
+  
+    this.selectedMedication.set(null);
+  }
+  
+  removeMedication(brandNameId: string): void {
+    this.prescriptionItems.update(items => items.filter(i => i.brandNameId !== brandNameId));
+  }
+  
+  getMedicationDisplayName(item: any): string {
+    if (item.brandNameAr) {
+      return `${item.brandNameAr} (${item.activeIngredientNameAr || ''})`;
+    }
+    const all = this.prescriptionSuggestionsCache();
+    const found = all.find((m: any) => m.id === item.brandNameId);
+    if (found) {
+      return `${found.nameAr} (${found.activeIngredientNameAr || found.name})`;
+    }
+    return 'دواء جديد';
+  }
+
+  save(): void {
+  if (!this.form.clinicId) {
+    this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'يرجى اختيار العيادة.' });
+    return;
+  }
+  if (!this.visitDate || !this.visitTime) {
+    this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'يرجى تحديد التاريخ والوقت.' });
+    return;
+  }
+
+  const combined = new Date(this.visitDate);
+  combined.setHours(this.visitTime.getHours(), this.visitTime.getMinutes(), 0, 0);
+  this.form.visitDate = this.toLocalIsoString(combined);
+
+  this.saving.set(true);
+  this.visitService.create(this.form).subscribe({
+    next: (response) => {
+      if (response.isSuccess) {
+        const visitId = response.value;
+
+        // إذا كان هناك أدوية في الوصفة، احفظها
+        if (this.prescriptionItems().length > 0) {
+          const prescriptionRequest = {
+            visitId: visitId,
+            generalNotes: this.prescriptionGeneralNotes() || undefined,
+            items: this.prescriptionItems().map((item, idx) => ({
+              brandNameId: item.brandNameId,
+              dosage: item.dosage,
+              frequency: item.frequency,
+              duration: item.duration,
+              route: item.route,
+              instructions: item.instructions,
+              quantity: item.quantity,
+              displayOrder: idx + 1
+            }))
+          };
+
+          this.prescriptionService.save(prescriptionRequest).subscribe({
+            next: (prescRes) => {
+              this.saving.set(false);
+              if (prescRes.isSuccess) {
+                this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم إنشاء الجلسة والوصفة بنجاح.' });
+                this.navigateToAfterSave(visitId);
+              } else {
+                this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'تم إنشاء الجلسة لكن تعذّر حفظ الوصفة.' });
+                this.navigateToAfterSave(visitId);
+              }
+            },
+            error: () => {
+              this.saving.set(false);
+              this.messageService.add({ severity: 'warn', summary: 'تنبيه', detail: 'تم إنشاء الجلسة لكن تعذّر حفظ الوصفة.' });
+              this.navigateToAfterSave(visitId);
+            }
+          });
+        } else {
+          this.saving.set(false);
+          this.messageService.add({ severity: 'success', summary: 'تم', detail: 'تم إنشاء الجلسة بنجاح.' });
+          this.navigateToAfterSave(visitId);
+        }
+      }
+    },
+    error: (err) => {
+      this.saving.set(false);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'خطأ',
+        detail: err?.error?.error?.message ?? 'تعذّر إنشاء الجلسة.'
+      });
+    }
+  });
+}
+
+private navigateToAfterSave(visitId: string): void {
+  if (this.caseId) {
+    this.router.navigate(['/patients', this.patientId, 'treatment-cases', this.caseId]);
+  } else {
+    this.router.navigate(['/patients', this.patientId, 'visits', visitId]);
+  }
+}
 
   cancel(): void {
     if (this.caseId) {

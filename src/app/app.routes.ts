@@ -109,6 +109,9 @@ export const routes: Routes = [
       { path: 'reports/financial-follow-up', loadComponent: () => import('./features/reports/financial-follow-up/financial-follow-up').then(m => m.FinancialFollowUpComponent) },
       { path: 'reports/diagnosis-report', loadComponent: () => import('./features/reports/diagnosis-report/diagnosis-report').then(m => m.DiagnosisReportComponent) },
       { path: 'reports/diagnosis-stats', loadComponent: () => import('./features/reports/diagnosis-stats/diagnosis-stats').then(m => m.DiagnosisStatsComponent) },
+
+      { path: 'medications/active-ingredients', loadComponent: () => import('./features/medications/active-ingredients-list/active-ingredients-list').then(m => m.ActiveIngredientsList) },
+{ path: 'medications/brand-names', loadComponent: () => import('./features/medications/brand-names-list/brand-names-list').then(m => m.BrandNamesList) },
     ]
   },
 

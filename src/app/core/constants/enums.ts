@@ -483,3 +483,89 @@ export const ExpiryFilterOptions = [
   { label: 'يوم', value: ExpiryFilter.Within1 },
   { label: 'منتهية', value: ExpiryFilter.Expired }
 ];
+
+export enum MedicationForm {
+  Tablet = 1,
+  Capsule = 2,
+  Syrup = 3,
+  Suspension = 4,
+  Injection = 5,
+  Ointment = 6,
+  Gel = 7,
+  Drops = 8,
+  Mouthwash = 9,
+  Spray = 10,
+  Powder = 11,
+  Cream = 12,
+  Other = 99
+}
+
+export enum MedicationRoute {
+  Oral = 1,
+  Topical = 2,
+  Sublingual = 3,
+  Injectable = 4,
+  Inhalation = 5,
+  Rectal = 6,
+  Ophthalmic = 7,
+  Otic = 8,
+  Nasal = 9,
+  Other = 99
+}
+
+export enum MedicationFrequency {
+  OnceDaily = 1,
+  TwiceDaily = 2,
+  ThreeTimesDaily = 3,
+  FourTimesDaily = 4,
+  Every6Hours = 5,
+  Every8Hours = 6,
+  Every12Hours = 7,
+  BeforeSleep = 8,
+  AsNeeded = 9,
+  Weekly = 10,
+  Other = 99
+}
+
+export const MedicationFormLabels: Record<MedicationForm, string> = {
+  [MedicationForm.Tablet]: 'أقراص',
+  [MedicationForm.Capsule]: 'كبسولات',
+  [MedicationForm.Syrup]: 'شراب',
+  [MedicationForm.Suspension]: 'معلق',
+  [MedicationForm.Injection]: 'حقن',
+  [MedicationForm.Ointment]: 'مرهم',
+  [MedicationForm.Gel]: 'جل',
+  [MedicationForm.Drops]: 'قطرة',
+  [MedicationForm.Mouthwash]: 'غسول فم',
+  [MedicationForm.Spray]: 'بخاخ',
+  [MedicationForm.Powder]: 'مسحوق',
+  [MedicationForm.Cream]: 'كريم',
+  [MedicationForm.Other]: 'أخرى'
+};
+
+export const MedicationRouteLabels: Record<MedicationRoute, string> = {
+  [MedicationRoute.Oral]: 'فموي',
+  [MedicationRoute.Topical]: 'موضعي',
+  [MedicationRoute.Sublingual]: 'تحت اللسان',
+  [MedicationRoute.Injectable]: 'حقن',
+  [MedicationRoute.Inhalation]: 'استنشاق',
+  [MedicationRoute.Rectal]: 'شرجي',
+  [MedicationRoute.Ophthalmic]: 'عيني',
+  [MedicationRoute.Otic]: 'أذني',
+  [MedicationRoute.Nasal]: 'أنفي',
+  [MedicationRoute.Other]: 'أخرى'
+};
+
+export const MedicationFrequencyLabels: Record<MedicationFrequency, string> = {
+  [MedicationFrequency.OnceDaily]: 'مرة يومياً',
+  [MedicationFrequency.TwiceDaily]: 'مرتين يومياً',
+  [MedicationFrequency.ThreeTimesDaily]: '3 مرات يومياً',
+  [MedicationFrequency.FourTimesDaily]: '4 مرات يومياً',
+  [MedicationFrequency.Every6Hours]: 'كل 6 ساعات',
+  [MedicationFrequency.Every8Hours]: 'كل 8 ساعات',
+  [MedicationFrequency.Every12Hours]: 'كل 12 ساعة',
+  [MedicationFrequency.BeforeSleep]: 'قبل النوم',
+  [MedicationFrequency.AsNeeded]: 'عند الحاجة',
+  [MedicationFrequency.Weekly]: 'أسبوعياً',
+  [MedicationFrequency.Other]: 'أخرى'
+};

@@ -167,6 +167,7 @@ export interface PatientListItem {
     id: string;
     patientId: string;
     patientName: string;
+    patientDateOfBirth?: string;
     clinicId: string;
     clinicName: string;
     doctorId: string;
@@ -182,6 +183,30 @@ export interface PatientListItem {
     updatedAt?: string;
     toothNumbers: number[];
     proceduresCount: number;
+    organizedPrescription?: OrganizedPrescription;
+  }
+  
+  export interface OrganizedPrescription {
+    id: string;
+    generalNotes?: string;
+    items: OrganizedPrescriptionItem[];
+  }
+  
+  export interface OrganizedPrescriptionItem {
+    id: string;
+    brandNameId: string;
+    brandName: string;
+    brandNameAr: string;
+    activeIngredientNameAr: string;
+    form: number;
+    strength?: string;
+    dosage: string;
+    frequency: number;
+    duration?: string;
+    route: number;
+    instructions?: string;
+    quantity: number;
+    displayOrder: number;
   }
   
   export interface UpdateVisitRequest {

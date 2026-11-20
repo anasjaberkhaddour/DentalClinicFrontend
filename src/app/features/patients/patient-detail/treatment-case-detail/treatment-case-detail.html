@@ -1,4 +1,4 @@
-<div class="max-w-5xl mx-auto space-y-6">
+<div class="w-full space-y-6">
 
   @if (loading()) {
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-3">
@@ -12,7 +12,7 @@
     <!-- Header -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
       <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
-        
+
         <!-- Left: Info -->
         <div class="flex items-center gap-4 shrink-0">
           <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-md shrink-0">
@@ -26,10 +26,10 @@
             </p>
           </div>
         </div>
-    
+
         <!-- Right: Status, Dates, Actions -->
         <div class="flex flex-wrap items-center gap-3 xl:justify-end">
-          
+
           <!-- Status & Dates -->
           <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs">
             <div class="flex items-center gap-1.5">
@@ -58,7 +58,7 @@
               </div>
             }
           </div>
-    
+
           <!-- Actions -->
           <div class="flex items-center gap-1">
             <button pButton type="button" icon="pi pi-arrow-right" severity="secondary" [outlined]="true" [rounded]="true" pTooltip="رجوع" tooltipPosition="bottom" (click)="goBack()"></button>
@@ -71,16 +71,16 @@
             }
           </div>
         </div>
-    
+
       </div>
     </div>
 
-    <!-- الشكوى + الفحص السريري (سطر واحد) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- ===== السطر الأول: الشكوى + الفحص السريري + خطة العلاج ===== -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
       <!-- الشكوى -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-        <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
           <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm">
             <i class="pi pi-comment text-primary-600"></i>
             الشكوى
@@ -90,19 +90,19 @@
           }
         </div>
         @if (editingField() === 'chiefComplaint') {
-          <textarea pTextarea [ngModel]="inlineEditValue()" (ngModelChange)="inlineEditValue.set($event)" rows="2" class="w-full mb-2" autofocus></textarea>
+          <textarea pTextarea [ngModel]="inlineEditValue()" (ngModelChange)="inlineEditValue.set($event)" rows="4" class="w-full mb-2" autofocus></textarea>
           <div class="flex justify-end gap-2">
             <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" size="small" (click)="cancelEdit()"></button>
             <button pButton type="button" label="حفظ" icon="pi pi-check" size="small" [loading]="editFieldSaving()" (click)="saveInlineEdit()"></button>
           </div>
         } @else {
-          <p class="text-sm text-slate-600 whitespace-pre-line">{{ c.chiefComplaint || '—' }}</p>
+          <p class="text-sm text-slate-600 whitespace-pre-line min-h-[80px]">{{ c.chiefComplaint || '—' }}</p>
         }
       </div>
 
       <!-- الفحص السريري -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-        <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
           <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm">
             <i class="pi pi-clipboard text-primary-600"></i>
             الفحص السريري
@@ -112,162 +112,157 @@
           }
         </div>
         @if (editingField() === 'clinicalFindings') {
-          <textarea pTextarea [ngModel]="inlineEditValue()" (ngModelChange)="inlineEditValue.set($event)" rows="2" class="w-full mb-2" autofocus></textarea>
+          <textarea pTextarea [ngModel]="inlineEditValue()" (ngModelChange)="inlineEditValue.set($event)" rows="4" class="w-full mb-2" autofocus></textarea>
           <div class="flex justify-end gap-2">
             <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" size="small" (click)="cancelEdit()"></button>
             <button pButton type="button" label="حفظ" icon="pi pi-check" size="small" [loading]="editFieldSaving()" (click)="saveInlineEdit()"></button>
           </div>
         } @else {
-          <p class="text-sm text-slate-600 whitespace-pre-line">{{ c.clinicalFindings || '—' }}</p>
+          <p class="text-sm text-slate-600 whitespace-pre-line min-h-[80px]">{{ c.clinicalFindings || '—' }}</p>
+        }
+      </div>
+
+      <!-- خطة العلاج -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+          <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm">
+            <i class="pi pi-list-check text-primary-600"></i>
+            خطة العلاج
+          </h3>
+          @if (editingField() !== 'treatmentPlanSummary') {
+            <button pButton type="button" icon="pi pi-pencil" severity="secondary" [text]="true" [rounded]="true" size="small" (click)="startEdit('treatmentPlanSummary')"></button>
+          }
+        </div>
+        @if (editingField() === 'treatmentPlanSummary') {
+          <textarea pTextarea [ngModel]="inlineEditValue()" (ngModelChange)="inlineEditValue.set($event)" rows="4" class="w-full mb-2" autofocus></textarea>
+          <div class="flex justify-end gap-2">
+            <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" size="small" (click)="cancelEdit()"></button>
+            <button pButton type="button" label="حفظ" icon="pi pi-check" size="small" [loading]="editFieldSaving()" (click)="saveInlineEdit()"></button>
+          </div>
+        } @else {
+          <p class="text-sm text-slate-600 whitespace-pre-line min-h-[80px]">{{ c.treatmentPlanSummary || '—' }}</p>
         }
       </div>
 
     </div>
 
-    <!-- التشخيصات (سطر كامل) -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm">
-          <i class="pi pi-search text-primary-600"></i>
-          التشخيصات
-        </h3>
-        <button pButton type="button" label="إضافة" icon="pi pi-plus" size="small" [outlined]="true" (click)="openDiagnosesEdit()"></button>
-      </div>
-      
-      @if (c.diagnoses.length === 0) {
-        <p class="text-sm text-slate-400 text-center py-4">لا توجد تشخيصات مضافة.</p>
-      } @else {
-        <div class="space-y-2">
-          @for (d of c.diagnoses; track d.id) {
-            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
-              <div class="flex items-center justify-between">
-                <span class="font-semibold text-slate-800 text-sm">{{ d.diagnosisTypeNameAr }}</span>
-                <button pButton type="button" icon="pi pi-times" severity="danger" [text]="true" [rounded]="true" size="small" (click)="removeDiagnosis(d.id)"></button>
-              </div>
-              @if (d.treatments && d.treatments.length > 0) {
-                <div class="flex flex-wrap gap-1.5 mt-3">
-                  @for (t of d.treatments; track t.id) {
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-primary-50 to-primary-100 text-primary-800 text-xs font-semibold border border-primary-200 shadow-sm hover:shadow hover:border-primary-300 transition-all cursor-default">
-                      <i class="pi pi-briefcase text-[10px] text-primary-600"></i>
-                      {{ t.nameAr }}
-                    </span>
-                  }
-                </div>
-              } @else {
-                <div class="text-xs text-amber-600 bg-amber-50 p-2 rounded-lg mt-2 flex items-center gap-1.5">
-                  <i class="pi pi-info-circle"></i> لم يتم ربط علاجات بهذا التشخيص من صفحة إدارة التشخيصات.
-                </div>
-              }
-            </div>
-          }
+    <!-- ===== السطر الثاني: التشخيصات + الإجراءات المنفذة ===== -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <!-- التشخيصات -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+          <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm">
+            <i class="pi pi-search text-primary-600"></i>
+            التشخيصات
+          </h3>
+          <button pButton type="button" label="إضافة" icon="pi pi-plus" size="small" [outlined]="true" (click)="openDiagnosesEdit()"></button>
         </div>
-      }
-    </div>
 
-    <!-- ===== الإجراءات المنفذة (المرتبطة بهذه الحالة) ===== -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm">
-          <i class="pi pi-wrench text-primary-600"></i>
-          الإجراءات المنفذة
-          @if (caseProcedures().length > 0) {
-            <span class="text-xs px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 font-bold">
-              {{ caseProcedures().length }}
-            </span>
-          }
-        </h3>
-      </div>
-
-      @if (proceduresLoading()) {
-        <div class="space-y-2">
-          <p-skeleton height="3.5rem" styleClass="mb-2" />
-          <p-skeleton height="3.5rem" />
-        </div>
-      } @else if (caseProcedures().length === 0) {
-        <div class="p-6 text-center bg-slate-50 rounded-xl">
-          <i class="pi pi-wrench text-slate-300 text-2xl mb-2 block"></i>
-          <p class="text-sm text-slate-400">لا توجد إجراءات مرتبطة بهذه الحالة بعد.</p>
-          <p class="text-xs text-slate-400 mt-1">
-            يمكنك إضافتها من صفحة مخطط الأسنان مع اختيار هذه الحالة.
-          </p>
-        </div>
-      } @else {
-        <div class="space-y-2">
-          @for (p of caseProcedures(); track p.id) {
-            <div class="group flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-200 hover:border-primary-300 hover:shadow-sm transition-all">
-
-              <!-- رقم السن -->
-              <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 flex flex-col items-center justify-center shrink-0">
-                <span class="text-[9px] text-primary-600 leading-none">السن</span>
-                <span class="font-bold text-primary-800 text-sm font-mono leading-tight">{{ p.toothNumber }}</span>
-              </div>
-
-              <!-- المحتوى -->
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="font-semibold text-slate-800 text-sm">
-                    {{ p.treatmentNameAr || '—' }}
-                  </span>
-                  @if (getSurfaces(p).length > 0) {
-                    <div class="flex gap-1">
-                      @for (s of getSurfaces(p); track s) {
-                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 font-bold">
-                          {{ s }}
-                        </span>
-                      }
-                    </div>
-                  }
+        @if (c.diagnoses.length === 0) {
+          <p class="text-sm text-slate-400 text-center py-4">لا توجد تشخيصات مضافة.</p>
+        } @else {
+          <div class="space-y-2">
+            @for (d of c.diagnoses; track d.id) {
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold text-slate-800 text-sm">{{ d.diagnosisTypeNameAr }}</span>
+                  <button pButton type="button" icon="pi pi-times" severity="danger" [text]="true" [rounded]="true" size="small" (click)="removeDiagnosis(d.id)"></button>
                 </div>
-                @if (p.notes) {
-                  <div class="text-xs text-slate-500 mt-1 italic line-clamp-1">
-                    {{ p.notes }}
+                @if (d.treatments && d.treatments.length > 0) {
+                  <div class="flex flex-wrap gap-1.5 mt-3">
+                    @for (t of d.treatments; track t.id) {
+                      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-primary-50 to-primary-100 text-primary-800 text-xs font-semibold border border-primary-200 shadow-sm hover:shadow hover:border-primary-300 transition-all cursor-default">
+                        <i class="pi pi-briefcase text-[10px] text-primary-600"></i>
+                        {{ t.nameAr }}
+                      </span>
+                    }
+                  </div>
+                } @else {
+                  <div class="text-xs text-amber-600 bg-amber-50 p-2 rounded-lg mt-2 flex items-center gap-1.5">
+                    <i class="pi pi-info-circle"></i> لم يتم ربط علاجات بهذا التشخيص من صفحة إدارة التشخيصات.
                   </div>
                 }
               </div>
-
-              <!-- التاريخ -->
-              <div class="flex items-center gap-1.5 text-xs text-slate-500 shrink-0">
-                <i class="pi pi-calendar text-slate-400 text-[10px]"></i>
-                <span class="font-mono">{{ p.performedAt | date:'dd/MM/yyyy' }}</span>
-              </div>
-
-            </div>
-          }
-        </div>
-      }
-    </div>
-
-    <!-- خطة العلاج -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm">
-          <i class="pi pi-list-check text-primary-600"></i>
-          خطة العلاج
-        </h3>
-        @if (editingField() !== 'treatmentPlanSummary') {
-          <button pButton type="button" icon="pi pi-pencil" severity="secondary" [text]="true" [rounded]="true" size="small" (click)="startEdit('treatmentPlanSummary')"></button>
+            }
+          </div>
         }
       </div>
-      @if (editingField() === 'treatmentPlanSummary') {
-        <textarea pTextarea [ngModel]="inlineEditValue()" (ngModelChange)="inlineEditValue.set($event)" rows="2" class="w-full mb-2" autofocus></textarea>
-        <div class="flex justify-end gap-2">
-          <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" size="small" (click)="cancelEdit()"></button>
-          <button pButton type="button" label="حفظ" icon="pi pi-check" size="small" [loading]="editFieldSaving()" (click)="saveInlineEdit()"></button>
-        </div>
-      } @else {
-        <p class="text-sm text-slate-600 whitespace-pre-line">{{ c.treatmentPlanSummary || '—' }}</p>
-      }
-    </div>
 
-    @if (c.notes) {
+      <!-- الإجراءات المنفذة -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-        <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm">
-          <i class="pi pi-file text-primary-600"></i>
-          ملاحظات
-        </h3>
-        <p class="text-sm text-slate-600 whitespace-pre-line">{{ c.notes }}</p>
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+          <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm">
+            <i class="pi pi-wrench text-primary-600"></i>
+            الإجراءات المنفذة
+            @if (caseProcedures().length > 0) {
+              <span class="text-xs px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 font-bold">
+                {{ caseProcedures().length }}
+              </span>
+            }
+          </h3>
+        </div>
+
+        @if (proceduresLoading()) {
+          <div class="space-y-2">
+            <p-skeleton height="3.5rem" styleClass="mb-2" />
+            <p-skeleton height="3.5rem" />
+          </div>
+        } @else if (caseProcedures().length === 0) {
+          <div class="p-6 text-center bg-slate-50 rounded-xl">
+            <i class="pi pi-wrench text-slate-300 text-2xl mb-2 block"></i>
+            <p class="text-sm text-slate-400">لا توجد إجراءات مرتبطة بهذه الحالة بعد.</p>
+            <p class="text-xs text-slate-400 mt-1">
+              يمكنك إضافتها من صفحة مخطط الأسنان مع اختيار هذه الحالة.
+            </p>
+          </div>
+        } @else {
+          <div class="space-y-2">
+            @for (p of caseProcedures(); track p.id) {
+              <div class="group flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-200 hover:border-primary-300 hover:shadow-sm transition-all">
+
+                <!-- رقم السن -->
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 flex flex-col items-center justify-center shrink-0">
+                  <span class="text-[9px] text-primary-600 leading-none">السن</span>
+                  <span class="font-bold text-primary-800 text-sm font-mono leading-tight">{{ p.toothNumber }}</span>
+                </div>
+
+                <!-- المحتوى -->
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-semibold text-slate-800 text-sm">
+                      {{ p.treatmentNameAr || '—' }}
+                    </span>
+                    @if (getSurfaces(p).length > 0) {
+                      <div class="flex gap-1">
+                        @for (s of getSurfaces(p); track s) {
+                          <span class="text-[10px] px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 font-bold">
+                            {{ s }}
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+                  @if (p.notes) {
+                    <div class="text-xs text-slate-500 mt-1 italic line-clamp-1">
+                      {{ p.notes }}
+                    </div>
+                  }
+                </div>
+
+                <!-- التاريخ -->
+                <div class="flex items-center gap-1.5 text-xs text-slate-500 shrink-0">
+                  <i class="pi pi-calendar text-slate-400 text-[10px]"></i>
+                  <span class="font-mono">{{ p.performedAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+
+              </div>
+            }
+          </div>
+        }
       </div>
-    }
+
+    </div>
 
     @if (c.cancellationReason) {
       <div class="bg-red-50 rounded-2xl border border-red-100 p-5">
@@ -279,7 +274,7 @@
       </div>
     }
 
-    <!-- Visits -->
+    <!-- ===== الجلسات (كما هي) ===== -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-bold text-slate-700 text-lg flex items-center gap-2">
@@ -401,14 +396,14 @@
 <p-dialog [visible]="teethEditDialog()" (visibleChange)="teethEditDialog.set($event)" header="تحديد الأسنان المستهدفة" [modal]="true" [style]="{ width: '800px' }" appendTo="body">
   <div class="space-y-4 py-2 overflow-x-auto">
     <div class="min-w-[600px] space-y-2">
-      
+
       <!-- الفك العلوي -->
       <div class="space-y-2">
         <div class="text-xs text-center text-slate-400 font-semibold">الفك العلوي</div>
         <div class="flex items-end justify-center gap-0.5 md:gap-1">
           @for (num of upperRight; track num) {
             <button type="button" class="flex flex-col items-center hover:scale-110 transition-transform" (click)="toggleToothSelection(getTooth(num)?.id)">
-              <div class="w-8 h-10 md:w-10 md:h-12 transition-all rounded-lg" 
+              <div class="w-8 h-10 md:w-10 md:h-12 transition-all rounded-lg"
                   [class.bg-primary-100]="isToothSelected(getTooth(num)?.id)"
                   [class.ring-2]="isToothSelected(getTooth(num)?.id)"
                   [class.ring-primary-500]="isToothSelected(getTooth(num)?.id)"
@@ -421,7 +416,7 @@
           <div class="w-px h-12 bg-slate-200 mx-1"></div>
           @for (num of upperLeft; track num) {
             <button type="button" class="flex flex-col items-center hover:scale-110 transition-transform" (click)="toggleToothSelection(getTooth(num)?.id)">
-              <div class="w-8 h-10 md:w-10 md:h-12 transition-all rounded-lg" 
+              <div class="w-8 h-10 md:w-10 md:h-12 transition-all rounded-lg"
                   [class.bg-primary-100]="isToothSelected(getTooth(num)?.id)"
                   [class.ring-2]="isToothSelected(getTooth(num)?.id)"
                   [class.ring-primary-500]="isToothSelected(getTooth(num)?.id)"
@@ -442,7 +437,7 @@
           @for (num of lowerRight; track num) {
             <button type="button" class="flex flex-col items-center hover:scale-110 transition-transform" (click)="toggleToothSelection(getTooth(num)?.id)">
               <span class="text-[10px] text-slate-500 mb-1 font-mono">{{ num }}</span>
-              <div class="w-8 h-10 md:w-10 md:h-12 transition-all rounded-lg" 
+              <div class="w-8 h-10 md:w-10 md:h-12 transition-all rounded-lg"
                 [class.bg-primary-100]="isToothSelected(getTooth(num)?.id)"
                 [class.ring-2]="isToothSelected(getTooth(num)?.id)"
                 [class.ring-primary-500]="isToothSelected(getTooth(num)?.id)"
@@ -455,7 +450,7 @@
           @for (num of lowerLeft; track num) {
             <button type="button" class="flex flex-col items-center hover:scale-110 transition-transform" (click)="toggleToothSelection(getTooth(num)?.id)">
               <span class="text-[10px] text-slate-500 mb-1 font-mono">{{ num }}</span>
-              <div class="w-8 h-10 md:w-10 md:h-12 transition-all rounded-lg" 
+              <div class="w-8 h-10 md:w-10 md:h-12 transition-all rounded-lg"
                   [class.bg-primary-100]="isToothSelected(getTooth(num)?.id)"
                   [class.ring-2]="isToothSelected(getTooth(num)?.id)"
                   [class.ring-primary-500]="isToothSelected(getTooth(num)?.id)"

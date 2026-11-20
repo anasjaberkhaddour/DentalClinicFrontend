@@ -1,196 +1,250 @@
-<div class="max-w-5xl mx-auto space-y-6">
+@if (loading()) {
+  <div class="space-y-4">
+    <p-skeleton width="60%" height="2rem" />
+    <p-skeleton width="100%" height="10rem" />
+  </div>
+}
 
-  @if (loading()) {
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-3">
-      <p-skeleton width="40%" height="2rem" />
-      <p-skeleton width="60%" height="1rem" />
-      <p-skeleton width="80%" height="1rem" />
+@else if (visit(); as v) {
+
+  <!-- ============ رأس الصفحة ============ -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+    <div>
+      <div class="flex items-center gap-3">
+        <button pButton icon="pi pi-arrow-right" [text]="true" [rounded]="true" severity="secondary" (click)="goBack()"></button>
+        <h1 class="text-2xl font-bold text-slate-800">تفاصيل الجلسة</h1>
+      </div>
+      <p class="text-slate-500 text-sm mt-1">
+        {{ v.visitDate | date:'dd/MM/yyyy - HH:mm' }}
+        @if (v.treatmentCaseNumber) {
+          <span class="ml-2 px-2 py-0.5 bg-primary-50 text-primary-700 rounded-md text-xs font-semibold">
+            {{ v.treatmentCaseNumber }}
+          </span>
+        }
+      </p>
     </div>
-  }
-
-  @else if (visit(); as v) {
-
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-      <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
-        
-        <div class="flex items-center gap-4 shrink-0">
-          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-md shrink-0">
-            <i class="pi pi-file-edit text-white text-xl"></i>
-          </div>
-          <div>
-            <h1 class="text-xl font-bold text-slate-800 line-clamp-1">تفاصيل الجلسة</h1>
-            <p class="text-sm text-slate-500 mt-0.5">{{ v.visitDate | date:'dd/MM/yyyy - HH:mm' }}</p>
-            @if (v.treatmentCaseNumber) {
-              <a
-                [routerLink]="['/patients', patientId, 'treatment-cases', v.treatmentCaseId]"
-                class="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 mt-1 font-semibold">
-                <i class="pi pi-briefcase text-[10px]"></i>
-                {{ v.treatmentCaseNumber }}
-              </a>
-            }
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-3 xl:justify-end">
-          
-          <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs">
-            <div class="flex items-center gap-1.5">
-              <span class="text-slate-500">المريض:</span>
-              <span class="font-semibold text-slate-800">{{ v.patientName }}</span>
-            </div>
-            <div class="w-px h-4 bg-slate-300"></div>
-            <div class="flex items-center gap-1.5">
-              <span class="text-slate-500">العيادة:</span>
-              <span class="font-semibold text-slate-800">{{ v.clinicName }}</span>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-1">
-            <button pButton type="button" icon="pi pi-arrow-right" severity="secondary" [outlined]="true" [rounded]="true" pTooltip="رجوع" tooltipPosition="bottom" (click)="goBack()"></button>
-            <button pButton type="button" icon="pi pi-calendar" severity="info" [outlined]="true" [rounded]="true" pTooltip="تعديل التاريخ والوقت" tooltipPosition="bottom" (click)="openDateTimeEdit()"></button>
-            <button pButton type="button" icon="pi pi-trash" severity="danger" [outlined]="true" [rounded]="true" pTooltip="حذف" tooltipPosition="bottom" (click)="confirmDelete()"></button>
-          </div>
-        </div>
-
+    <div class="flex items-center gap-2">
+      <div class="px-3 py-1.5 bg-slate-100 rounded-lg text-xs text-slate-600">
+        <span class="font-semibold">المريض:</span> {{ v.patientName }}
       </div>
+      <div class="px-3 py-1.5 bg-slate-100 rounded-lg text-xs text-slate-600">
+        <span class="font-semibold">العيادة:</span> {{ v.clinicName }}
+      </div>
+      <button pButton label="طباعة الوصفة" icon="pi pi-print" severity="info" (click)="printPrescription()"></button>
     </div>
+  </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:col-span-2">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm">
-            <i class="pi pi-search text-primary-600"></i>
-            الفحص السريري
-          </h3>
-          @if (editingField() !== 'clinicalExamination') {
-            <button pButton type="button" icon="pi pi-pencil" severity="secondary" [text]="true" [rounded]="true" size="small" (click)="startEdit('clinicalExamination')"></button>
-          }
-        </div>
-        @if (editingField() === 'clinicalExamination') {
-          <textarea pTextarea [ngModel]="inlineEditValue()" (ngModelChange)="inlineEditValue.set($event)" rows="2" class="w-full mb-2" autofocus></textarea>
-          <div class="flex justify-end gap-2">
-            <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" size="small" (click)="cancelEdit()"></button>
-            <button pButton type="button" label="حفظ" icon="pi pi-check" size="small" [loading]="editFieldSaving()" (click)="saveInlineEdit()"></button>
-          </div>
-        } @else {
-          <p class="text-sm text-slate-600 whitespace-pre-line">{{ hasValue(v.clinicalExamination) ? v.clinicalExamination : '—' }}</p>
+  <!-- ============ البطاقة الرئيسية: 3 أقسام في صف واحد ============ -->
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+
+    <!-- الفحص السريري -->
+    <div class="p-4 rounded-xl bg-slate-50/60 border-r border-slate-200 md:border-r md:border-b-0">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+        <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+          <i class="pi pi-search text-primary-600"></i>
+          الفحص السريري
+        </h3>
+        @if (editingField() !== 'clinicalExamination') {
+          <button pButton icon="pi pi-pencil" [text]="true" [rounded]="true" size="small" severity="secondary" (click)="startEdit('clinicalExamination')"></button>
         }
       </div>
-
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:col-span-2">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm">
-            <i class="pi pi-briefcase text-blue-600"></i>
-            الإجراءات المُنفَّذة
-          </h3>
-          @if (editingField() !== 'proceduresPerformed') {
-            <button pButton type="button" icon="pi pi-pencil" severity="secondary" [text]="true" [rounded]="true" size="small" (click)="startEdit('proceduresPerformed')"></button>
-          }
+      @if (editingField() === 'clinicalExamination') {
+        <div class="space-y-2">
+          <textarea pTextarea [(ngModel)]="inlineEditValue" rows="5" class="w-full"></textarea>
+          <div class="flex gap-2 justify-end">
+            <button pButton label="إلغاء" icon="pi pi-times" severity="secondary" [text]="true" size="small" (click)="cancelEdit()"></button>
+            <button pButton label="حفظ" icon="pi pi-check" size="small" [loading]="editFieldSaving()" (click)="saveInlineEdit()"></button>
+          </div>
         </div>
-        @if (editingField() === 'proceduresPerformed') {
-          <textarea pTextarea [ngModel]="inlineEditValue()" (ngModelChange)="inlineEditValue.set($event)" rows="2" class="w-full mb-2" autofocus></textarea>
-          <div class="flex justify-end gap-2">
-            <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" size="small" (click)="cancelEdit()"></button>
-            <button pButton type="button" label="حفظ" icon="pi pi-check" size="small" [loading]="editFieldSaving()" (click)="saveInlineEdit()"></button>
-          </div>
-        } @else {
-          <p class="text-sm text-slate-600 whitespace-pre-line">{{ hasValue(v.proceduresPerformed) ? v.proceduresPerformed : '—' }}</p>
-        }
-      </div>
-
-      <div class="bg-amber-50 rounded-2xl border border-amber-100 p-5">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-bold text-amber-700 flex items-center gap-2 text-sm">
-            <i class="pi pi-file text-amber-600"></i>
-            الوصفة الطبية
-          </h3>
-          @if (editingField() !== 'prescription') {
-            <button pButton type="button" icon="pi pi-pencil" severity="warn" [text]="true" [rounded]="true" size="small" (click)="startEdit('prescription')"></button>
-          }
-        </div>
-        @if (editingField() === 'prescription') {
-          <textarea pTextarea [ngModel]="inlineEditValue()" (ngModelChange)="inlineEditValue.set($event)" rows="3" class="w-full mb-2" autofocus></textarea>
-          <div class="flex justify-end gap-2">
-            <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" size="small" (click)="cancelEdit()"></button>
-            <button pButton type="button" label="حفظ" icon="pi pi-check" size="small" [loading]="editFieldSaving()" (click)="saveInlineEdit()"></button>
-          </div>
-        } @else {
-          <p class="text-sm text-amber-700 whitespace-pre-line">{{ hasValue(v.prescription) ? v.prescription : 'لا توجد' }}</p>
-        }
-      </div>
-
-      <div class="bg-slate-50 rounded-2xl border border-slate-100 p-5">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm">
-            <i class="pi pi-info-circle text-slate-500"></i>
-            ملاحظات
-          </h3>
-          @if (editingField() !== 'notes') {
-            <button pButton type="button" icon="pi pi-pencil" severity="secondary" [text]="true" [rounded]="true" size="small" (click)="startEdit('notes')"></button>
-          }
-        </div>
-        @if (editingField() === 'notes') {
-          <textarea pTextarea [ngModel]="inlineEditValue()" (ngModelChange)="inlineEditValue.set($event)" rows="2" class="w-full mb-2" autofocus></textarea>
-          <div class="flex justify-end gap-2">
-            <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" size="small" (click)="cancelEdit()"></button>
-            <button pButton type="button" label="حفظ" icon="pi pi-check" size="small" [loading]="editFieldSaving()" (click)="saveInlineEdit()"></button>
-          </div>
-        } @else {
-          <p class="text-sm text-slate-600 whitespace-pre-line">{{ hasValue(v.notes) ? v.notes : '—' }}</p>
-        }
-      </div>
-
-      @if (v.toothNumbers.length > 0) {
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:col-span-2">
-          <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2">
-            <i class="pi pi-th-large text-primary-600"></i>
-            الأسنان المعنية
-          </h3>
-          <div class="flex flex-wrap gap-2">
-            @for (num of v.toothNumbers; track num) {
-              <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary-50 border-2 border-primary-200 font-bold text-primary-700">
-                {{ num }}
-              </span>
-            }
-          </div>
+      } @else {
+        <div class="text-sm text-slate-600 leading-relaxed min-h-[80px]">
+          {{ hasValue(v.clinicalExamination) ? v.clinicalExamination : '—' }}
         </div>
       }
     </div>
 
-  }
+    <!-- الإجراءات المُنفَّذة -->
+    <div class="p-4 rounded-xl bg-slate-50/60 border-r border-slate-200 md:border-r md:border-b-0">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+        <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+          <i class="pi pi-briefcase text-primary-600"></i>
+          الإجراءات المُنفَّذة
+        </h3>
+        @if (editingField() !== 'proceduresPerformed') {
+          <button pButton icon="pi pi-pencil" [text]="true" [rounded]="true" size="small" severity="secondary" (click)="startEdit('proceduresPerformed')"></button>
+        }
+      </div>
+      @if (editingField() === 'proceduresPerformed') {
+        <div class="space-y-2">
+          <textarea pTextarea [(ngModel)]="inlineEditValue" rows="5" class="w-full"></textarea>
+          <div class="flex gap-2 justify-end">
+            <button pButton label="إلغاء" icon="pi pi-times" severity="secondary" [text]="true" size="small" (click)="cancelEdit()"></button>
+            <button pButton label="حفظ" icon="pi pi-check" size="small" [loading]="editFieldSaving()" (click)="saveInlineEdit()"></button>
+          </div>
+        </div>
+      } @else {
+        <div class="text-sm text-slate-600 leading-relaxed min-h-[80px]">
+          {{ hasValue(v.proceduresPerformed) ? v.proceduresPerformed : '—' }}
+        </div>
+      }
+    </div>
+
+    <!-- ملاحظات -->
+    <div class="p-4 rounded-xl bg-slate-50/60">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+        <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+          <i class="pi pi-info-circle text-primary-600"></i>
+          ملاحظات
+        </h3>
+        @if (editingField() !== 'notes') {
+          <button pButton icon="pi pi-pencil" [text]="true" [rounded]="true" size="small" severity="secondary" (click)="startEdit('notes')"></button>
+        }
+      </div>
+      @if (editingField() === 'notes') {
+        <div class="space-y-2">
+          <textarea pTextarea [(ngModel)]="inlineEditValue" rows="5" class="w-full"></textarea>
+          <div class="flex gap-2 justify-end">
+            <button pButton label="إلغاء" icon="pi pi-times" severity="secondary" [text]="true" size="small" (click)="cancelEdit()"></button>
+            <button pButton label="حفظ" icon="pi pi-check" size="small" [loading]="editFieldSaving()" (click)="saveInlineEdit()"></button>
+          </div>
+        </div>
+      } @else {
+        <div class="text-sm text-slate-600 leading-relaxed min-h-[80px]">
+          {{ hasValue(v.notes) ? v.notes : '—' }}
+        </div>
+      }
+    </div>
+
+  </div>
 </div>
 
-<p-dialog
-  [visible]="dateTimeDialog()"
-  (visibleChange)="dateTimeDialog.set($event)"
-  header="تعديل تاريخ ووقت الجلسة"
-  [modal]="true"
-  [style]="{ width: '400px' }"
-  appendTo="body">
+  <!-- ============ الأسنان المعنية ============ -->
+  @if (v.toothNumbers.length > 0) {
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+      <h2 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+        <i class="pi pi-th-large text-primary-600"></i>
+        الأسنان المعنية
+      </h2>
+      <div class="flex flex-wrap gap-2">
+        @for (num of v.toothNumbers; track num) {
+          <span class="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-lg text-sm font-semibold">
+            {{ num }}
+          </span>
+        }
+      </div>
+    </div>
+  }
 
-  <div class="space-y-4 py-2">
-    <div>
-      <label class="block text-sm font-semibold text-slate-700 mb-2">التاريخ</label>
-      <p-datepicker
-        [(ngModel)]="editDate"
-        dateFormat="dd/mm/yy"
-        styleClass="w-full"
-        appendTo="body" />
+  <!-- ============ الوصفة الطبية المنظمة (عرض كامل) ============ -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+    <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+      <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+        <i class="pi pi-file-edit text-primary-600"></i>
+        الوصفة الطبية
+      </h2>
+      <button pButton label="حفظ الوصفة" icon="pi pi-check" size="small"
+              [loading]="prescriptionSaving()"
+              (click)="savePrescription()"></button>
     </div>
-    <div>
-      <label class="block text-sm font-semibold text-slate-700 mb-2">الوقت</label>
-      <p-datepicker
-        [(ngModel)]="editTime"
-        [timeOnly]="true"
-        hourFormat="24"
-        styleClass="w-full"
-        appendTo="body" />
-    </div>
+
+    @if (prescriptionLoading()) {
+      <div class="space-y-3">
+        <p-skeleton width="100%" height="2rem" />
+        <p-skeleton width="80%" height="1rem" />
+      </div>
+    } @else {
+      <!-- حقل البحث الموحد -->
+      <div class="flex flex-col md:flex-row gap-2 mb-4">
+        <p-autoComplete
+          [(ngModel)]="selectedMedication"
+          [suggestions]="medicationSuggestions()"
+          (completeMethod)="searchMedications($event)"
+          optionLabel="nameAr"
+          placeholder="ابحث بالاسم العلمي أو التجاري (عربي/إنجليزي)..."
+          [minLength]="2"
+          [showClear]="true"
+          [loading]="medicationSearching()"
+          styleClass="w-full md:flex-1"
+          inputStyleClass="w-full">
+          <ng-template let-med pTemplate="item">
+            <div class="flex flex-col p-1">
+              <span class="font-bold text-slate-800">
+                {{ med.nameAr }}
+                <span class="text-slate-500 font-normal">({{ med.name }})</span>
+              </span>
+              <span class="text-xs text-slate-500">
+                {{ med.activeIngredientNameAr }}
+                @if (med.strength) { | {{ med.strength }} }
+                @if (med.form) { | {{ med.form }} }
+              </span>
+            </div>
+          </ng-template>
+        </p-autoComplete>
+        <button pButton label="إضافة" icon="pi pi-plus"
+                [disabled]="!selectedMedication()?.id"
+                (click)="addMedication()"></button>
+      </div>
+
+      <!-- قائمة الأدوية -->
+      @if (prescriptionItems().length === 0) {
+        <div class="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+          <i class="pi pi-file-edit text-slate-300 text-2xl mb-2 block"></i>
+          <p class="text-sm text-slate-400">لم تُضف أي أدوية بعد. ابحث أعلاه لإضافة دواء.</p>
+        </div>
+      } @else {
+        <div class="space-y-3">
+          @for (item of prescriptionItems(); track item.brandNameId; let i = $index) {
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="flex items-center justify-between mb-2">
+                <div class="font-bold text-slate-800">
+                  <span class="text-primary-600 ml-2">{{ i + 1 }}.</span>
+                  {{ item.brandNameAr }} ({{ item.activeIngredientNameAr }})
+                </div>
+                <button pButton icon="pi pi-trash" severity="danger"
+                        [text]="true" [rounded]="true" size="small"
+                        (click)="removeMedication(item.brandNameId)"></button>
+              </div>
+              <div class="grid grid-cols-12 gap-2">
+                <div class="col-span-12 md:col-span-3">
+                  <label class="block text-xs text-slate-500 mb-1">الجرعة (مثال: 1 قرص)</label>
+                  <input pInputText [(ngModel)]="item.dosage" class="w-full" placeholder="الجرعة" />
+                </div>
+                <div class="col-span-6 md:col-span-2">
+                  <label class="block text-xs text-slate-500 mb-1">التكرار</label>
+                  <p-select [(ngModel)]="item.frequency" [options]="frequencyOptions"
+                            optionLabel="label" optionValue="value" styleClass="w-full" />
+                </div>
+                <div class="col-span-6 md:col-span-2">
+                  <label class="block text-xs text-slate-500 mb-1">طريقة الاستخدام</label>
+                  <p-select [(ngModel)]="item.route" [options]="routeOptions"
+                            optionLabel="label" optionValue="value" styleClass="w-full" />
+                </div>
+                <div class="col-span-6 md:col-span-2">
+                  <label class="block text-xs text-slate-500 mb-1">المدة</label>
+                  <input pInputText [(ngModel)]="item.duration" class="w-full" placeholder="5 أيام" />
+                </div>
+                <div class="col-span-6 md:col-span-2">
+                  <label class="block text-xs text-slate-500 mb-1">الكمية</label>
+                  <p-inputNumber [(ngModel)]="item.quantity" [min]="1" styleClass="w-full" />
+                </div>
+                <div class="col-span-12">
+                  <label class="block text-xs text-slate-500 mb-1">تعليمات إضافية</label>
+                  <input pInputText [(ngModel)]="item.instructions" class="w-full" placeholder="مثال: بعد الأكل" />
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ملاحظات عامة -->
+      <div class="mt-4">
+        <label class="block text-sm font-semibold text-slate-700 mb-2">ملاحظات عامة على الوصفة</label>
+        <textarea pTextarea [(ngModel)]="prescriptionGeneralNotes" rows="2" class="w-full"
+                  placeholder="أي تعليمات إضافية للمريض أو الصيدلي..."></textarea>
+      </div>
+    }
   </div>
 
-  <ng-template pTemplate="footer">
-    <button pButton type="button" label="إلغاء" severity="secondary" [outlined]="true" (click)="dateTimeDialog.set(false)"></button>
-    <button pButton type="button" label="حفظ" icon="pi pi-check" [loading]="saving()" (click)="saveDateTime()"></button>
-  </ng-template>
-</p-dialog>
+}
